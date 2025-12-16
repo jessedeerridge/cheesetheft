@@ -1,3 +1,5 @@
+
+
 <!DOCTYPE html> 
 <html lang="ja">
 <head>
@@ -522,37 +524,49 @@
   .blackout.on{ opacity:1; }
 
   /* ✅ 最多票カード：中央拡大＋揺れ */
-  #winnerBackdrop{
-    position:fixed; inset:0;
-    background:rgba(0,0,0,.35);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    z-index:10020;
-  }
-  #winnerBackdrop.hidden{ display:none; }
-  #winnerCard{
-    width:220px;
-    height:330px;
-    border-radius:16px;
-    border:1px solid #ddd;
-    box-shadow:0 22px 60px rgba(0,0,0,.45);
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
-    transform-origin:center;
-    animation: winnerShake 650ms ease-in-out both;
-  }
-  @keyframes winnerShake{
-    0%   { transform:scale(1) rotate(0deg); }
-    12%  { transform:scale(1.02) rotate(-2deg); }
-    24%  { transform:scale(1.03) rotate(2deg); }
-    36%  { transform:scale(1.03) rotate(-1.5deg); }
-    48%  { transform:scale(1.03) rotate(1.5deg); }
-    60%  { transform:scale(1.02) rotate(-1deg); }
-    72%  { transform:scale(1.02) rotate(1deg); }
-    100% { transform:scale(1.02) rotate(0deg); }
-  }
+/* ✅ 最多票カード：中央拡大＋揺れ（同票なら2枚） */
+#winnerBackdrop{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.35);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:10020;
+}
+#winnerBackdrop.hidden{ display:none; }
+
+#winnerCards{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:18px;
+}
+
+.winner-card{
+  width:220px;
+  height:330px;
+  border-radius:16px;
+  border:1px solid #ddd;
+  box-shadow:0 22px 60px rgba(0,0,0,.45);
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  transform-origin:center;
+  animation: winnerShake 650ms ease-in-out both;
+}
+
+.winner-card.hidden{ display:none; }
+
+@keyframes winnerShake{
+  0%   { transform:scale(1) rotate(0deg); }
+  12%  { transform:scale(1.02) rotate(-2deg); }
+  24%  { transform:scale(1.03) rotate(2deg); }
+  36%  { transform:scale(1.03) rotate(-1.5deg); }
+  48%  { transform:scale(1.03) rotate(1.5deg); }
+  60%  { transform:scale(1.02) rotate(-1deg); }
+  72%  { transform:scale(1.02) rotate(1deg); }
+  100% { transform:scale(1.02) rotate(0deg); }
+}
 
 /* ✅ 投票済み表示：黒塗りではなく太枠 */
 .player-tag.voted-outline{
@@ -675,7 +689,10 @@
 
 <!-- ✅ 最多票カード：中央拡大 -->
 <div id="winnerBackdrop" class="hidden">
-  <div id="winnerCard"></div>
+  <div id="winnerCards">
+    <div id="winnerCardA" class="winner-card"></div>
+    <div id="winnerCardB" class="winner-card hidden"></div>
+  </div>
 </div>
 
 <audio id="cheeseSnd" src="cheese1.mp3" preload="auto"></audio>
@@ -689,16 +706,17 @@ import {
 /* =========================
    Firebase
    ========================= */
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAMeKfMoHt9qO2VuUBpkrKuei7yGBbEi8",
-  authDomain: "cheesetheft-fd52f.firebaseapp.com",
-  databaseURL: "https://cheesetheft-fd52f-default-rtdb.firebaseio.com",
-  projectId: "cheesetheft-fd52f",
-  storageBucket: "cheesetheft-fd52f.firebasestorage.app",
-  messagingSenderId: "298688959395",
-  appId: "1:298688959395:web:6ac2c3eb214201f2020016",
-  measurementId: "G-HPDFTCLR8H"
+  apiKey: "AIzaSyALgmax4WiOkFrdxaNC1Bfp6MdsEFoIfUU",
+  authDomain: "studio-m7owg.firebaseapp.com",
+  databaseURL: "https://studio-m7owg-default-rtdb.firebaseio.com",
+  projectId: "studio-m7owg",
+  storageBucket: "studio-m7owg.firebasestorage.app",
+  messagingSenderId: "263329516095",
+  appId: "1:263329516095:web:3d90a3993135dce1d8068a"
 };
+
 
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
@@ -830,7 +848,8 @@ const timeUpPopEl = document.getElementById('timeUpPop');
 
 /* ✅最多票カード */
 const winnerBackdropEl = document.getElementById('winnerBackdrop');
-const winnerCardEl = document.getElementById('winnerCard');
+const winnerCardAEl = document.getElementById('winnerCardA');
+const winnerCardBEl = document.getElementById('winnerCardB');
 
 let pendingSeatIndexToSteal = null;
 let pendingSeatPlayerIdToSteal = null;
@@ -1293,24 +1312,54 @@ function isPidRedTintForViewer(pid){
   }
   return false;
 }
-function showWinnerCard(pid){
-  if (!winnerBackdropEl || !winnerCardEl) return;
-  if (!pid) return;
+function applyWinnerCardVisual(cardEl, pid){
+  if (!cardEl) return;
 
-  winnerCardEl.classList.remove('red-tint');
-  winnerCardEl.style.backgroundImage = `url('${getCardImgForPid(pid)}')`;
+  cardEl.classList.remove('red-tint');
+  cardEl.style.backgroundImage = `url('${getCardImgForPid(pid)}')`;
 
+  // ✅「赤塗りなら赤塗りのまま」を中央表示にも反映
+  if (isPidRedTintForViewer(pid)){
+    cardEl.classList.add('red-tint');
+  }
+
+  // アニメを毎回再生
+  cardEl.style.animation = 'none';
+  void cardEl.offsetWidth;
+  cardEl.style.animation = '';
+}
+
+function showWinnerCards(winnerPids){
+  if (!winnerBackdropEl || !winnerCardAEl || !winnerCardBEl) return;
+
+  const list = Array.isArray(winnerPids) ? winnerPids.filter(Boolean) : [];
+  if (!list.length) return;
+
+  // 同票でも「2枚だけ」出す（要求どおり）
+  const p1 = list[0] || null;
+  const p2 = list[1] || null;
+
+  if (!p1) return;
+
+  // 1枚目
+  winnerCardAEl.classList.remove('hidden');
+  applyWinnerCardVisual(winnerCardAEl, p1);
+
+  // 2枚目（同票時）
+  if (p2){
+    winnerCardBEl.classList.remove('hidden');
+    applyWinnerCardVisual(winnerCardBEl, p2);
+  } else {
+    winnerCardBEl.classList.add('hidden');
+  }
 
   winnerBackdropEl.classList.remove('hidden');
-  // アニメを毎回再生
-  winnerCardEl.style.animation = 'none';
-  void winnerCardEl.offsetWidth;
-  winnerCardEl.style.animation = '';
 
   setTimeout(() => {
     winnerBackdropEl.classList.add('hidden');
   }, 2200);
 }
+
 winnerBackdropEl?.addEventListener('click', () => winnerBackdropEl.classList.add('hidden'));
 
 async function setMyVote(targetPid){
@@ -1457,7 +1506,7 @@ function subscribeVoteResult(){
     // 1秒後：最多票カードを中央拡大＋揺れ（同じ結果idでは1回だけ）
     if (r.id !== prevId){
       setTimeout(() => {
-        showWinnerCard(r.winnerPid);
+  showWinnerCards(r.winners || (r.winnerPid ? [r.winnerPid] : []));
       }, 1000);
     }
   });
@@ -3765,3 +3814,4 @@ btnResetRoom.addEventListener('click', async () => {
 
 </body>
 </html>
+
