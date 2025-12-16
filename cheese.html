@@ -1,0 +1,3767 @@
+<!DOCTYPE html> 
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>テンプレ</title>
+<style>
+  html, body{height:100%; overflow:hidden;}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#fff;color:#111;}
+  header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid #eee; position:sticky; top:0; z-index:400; background:#fff;}
+  h1{margin:0;font-size:18px;}
+  .small{font-size:12px;opacity:.75;}
+  .join-box{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:12px; position:relative; z-index:2;}
+  .join-box input{padding:8px;border:1px solid #ddd;border-radius:6px;font-size:16px;}
+  .btn{padding:6px 10px;border:1px solid #ddd;border-radius:6px;background:#f8f8f8;cursor:pointer;}
+  .btn.primary{background:#111;color:#fff;border-color:#111;}
+  .btn.ghost{background:transparent;}
+  .hidden{display:none;}
+  #lobby{padding:20px;border-top:1px solid #eee; position:relative; z-index:2;}
+  .copy-btn.copied, .btn.ghost.copied{background:#16a34a;color:#fff;border-color:#16a34a;}
+
+  main{
+    position:relative;
+    height:calc(100vh - 60px);
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+  }
+  main.prejoin{ background-image:url('cheesetop.jpg'); }
+  main.joined{ background-image:url('cheesemae.jpg'); }
+
+  .seat-pop{
+    position:fixed;left:50%;bottom:10px;transform:translateX(-50%);
+    background:orange;border:1px solid #eee;border-radius:12px;
+    box-shadow:0 12px 28px rgba(0,0,0,.12);
+    padding:10px;z-index:220;display:flex;flex-direction:column;gap:10px;min-width:280px;
+  }
+  .seat-pop.hidden{display:none;}
+  .seat-pop .row{display:flex;gap:8px;align-items:center;}
+  .seat-pop label{width:84px;font-size:13px;}
+  .seat-pop .tabs{display:flex;gap:6px;flex-wrap:wrap;}
+  .tab{padding:6px 10px;border:1px solid #ddd;border-radius:999px;cursor:pointer;user-select:none;position:relative;}
+  .tab.disabled{opacity:.45; pointer-events:none;}
+  .tab.disabled::after{content:'✕';position:absolute;inset:0;display:grid;place-items:center;font-size:18px;font-weight:700;color:#b91c1c;pointer-events:none;}
+  .tab.active{background:#111;color:#fff;border-color:#111;}
+
+  .host-selecting-pop{
+    position:fixed;left:50%;bottom:10px;transform:translateX(-50%);
+    background:rgba(20,20,20,.92);color:#fff;
+    padding:12px 16px;border-radius:14px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    z-index:225;font-weight:800;white-space:nowrap;
+    pointer-events:none;
+  }
+  .host-selecting-pop.hidden{display:none;}
+
+  .bottom-black-pop{
+    position:fixed;
+    left:50%;
+    bottom:14px;
+    transform:translateX(-50%);
+    background:rgba(20,20,20,.92);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:14px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    z-index:226;
+    font-weight:800;
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  .bottom-black-pop.hidden{display:none;}
+
+  /* ✅ 4分タイマー（白円＋青枠） */
+  #talkTimer{
+    position:fixed;
+    right:16px;
+    top:72px;
+    width:64px;height:64px;
+    border-radius:50%;
+    background:#fff;
+    border:4px solid #2563eb;
+    box-shadow:0 12px 28px rgba(0,0,0,.18);
+    z-index:460;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    user-select:none;
+    font-weight:900;
+    letter-spacing:.5px;
+  }
+  #talkTimer.visible{ display:flex; }
+  #talkTimer.running{ cursor:pointer; }
+  #talkTimer.paused{ cursor:pointer; }
+  #talkTimer .ttext{
+    font-size:14px;
+    line-height:1;
+  }
+
+  /* ✅「話し合い開始！」ポップ（中央：左→右、中央で0.5秒停止） */
+  #talkStartPop{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-150%,-50%);
+    background:rgba(20,20,20,.92);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:14px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    z-index:10002;
+    font-weight:800;
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  #talkStartPop.hidden{ display:none; }
+  #talkStartPop.show{
+    display:block;
+    animation: talkSlide 1.6s cubic-bezier(.22,.84,.44,1) both;
+  }
+
+  /* ✅ TIME UP ポップ（中央：左→右、中央で0.5秒停止） */
+  #timeUpPop{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-150%,-50%);
+    background:rgba(20,20,20,.92);
+    color:#fff;
+    padding:12px 16px;
+    border-radius:14px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    z-index:10003;
+    font-weight:800;
+    white-space:nowrap;
+    pointer-events:none;
+  }
+  #timeUpPop.hidden{ display:none; }
+  #timeUpPop.show{
+    display:block;
+    animation: talkSlide 1.6s cubic-bezier(.22,.84,.44,1) both;
+  }
+
+  @keyframes talkSlide{
+    0%   { transform:translate(-150%,-50%); }
+    45%  { transform:translate(-50%,-50%); }
+    70%  { transform:translate(-50%,-50%); }
+    100% { transform:translate(150%,-50%); }
+  }
+
+/* ✅ follower选定后：双方卡片“全体を赤く” */
+.red-tint{
+  /* 既存の枠・影は維持しつつ少し強める */
+  outline:3px solid rgba(220,38,38,.70);
+  box-shadow:
+    0 0 0 3px rgba(220,38,38,.30),
+    0 6px 16px rgba(0,0,0,.18);
+  filter:saturate(1.15) contrast(1.05);
+
+  /* ★これがポイント：赤い膜を乗せるための準備 */
+  position:relative;
+  overflow:hidden;          /* 角丸に沿わせる */
+  isolation:isolate;        /* blendのにじみ防止 */
+}
+
+/* ★カード全体に赤い膜（濃さはここで調整） */
+.red-tint::after{
+  content:'';
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+
+  /* 濃さを上げたいなら .22 → .28 など */
+  background:rgba(220,38,38,.22);
+  mix-blend-mode:multiply;  /* 画像の上に自然に赤を乗せる */
+}
+
+
+  /* ✅ follower 2人選択中：選ばれたタグに赤枠（確定前の目印） */
+  .player-tag.follower-picked{
+    outline:2px solid rgba(220,38,38,.75);
+    box-shadow:0 0 0 3px rgba(220,38,38,.18);
+  }
+
+  .player-circle{
+    position:relative;width:260px;height:260px;
+    margin:20px auto 0;border-radius:50%;
+    box-sizing:border-box;border:none;
+  }
+  .player-circle::before{content:'';}
+
+  #cheeseBtn{
+    position:absolute;
+    left:50%;
+    top:50%;
+    transform: translate(-50%, calc(-50% + 30px));
+    font-size:36px;
+    background:none;
+    border:none;
+    padding:0;
+    margin:0;
+    cursor:pointer;
+    line-height:1;
+    user-select:none;
+    z-index:6;
+  }
+  #cheeseBtn.hidden{ display:none; }
+
+  #cheeseLineSvg{
+    position:absolute;
+    inset:0;
+    width:100%;
+    height:100%;
+    pointer-events:none;
+    z-index:5;
+  }
+
+  .player-tag{
+    position:absolute;transform:translate(-50%,-50%);
+    padding:4px 8px;border-radius:999px;background:#f8f8f8;
+    border:1px solid #ddd;font-size:12px;white-space:nowrap;
+    z-index:7;
+    cursor:pointer;
+    user-select:none;
+  }
+  .player-tag.me{ background:#111;color:#fff;border-color:#111; cursor:default; }
+
+  .player-tag.follower-pickable{
+    outline:2px solid rgba(245,158,11,.75);
+    box-shadow:0 0 0 3px rgba(245,158,11,.18);
+  }
+
+  /* ✅ 投票：自分が選んだ相手の上に✉（黒字） */
+  .player-tag .vote-me-mark{
+    position:absolute;
+    left:50%;
+    top:-18px;
+    transform:translateX(-50%);
+    font-size:16px;
+    line-height:1;
+    color:#111;
+    text-shadow:0 1px 0 rgba(255,255,255,.65);
+    pointer-events:none;
+  }
+
+  /* ✅ 投票結果：✉✉✉ を表示 */
+  .player-tag .vote-count{
+    position:absolute;
+    left:50%;
+    top:-18px;
+    transform:translateX(-50%);
+    font-size:16px;
+    line-height:1;
+    color:#111;
+    text-shadow:0 1px 0 rgba(255,255,255,.65);
+    pointer-events:none;
+    font-weight:900;
+    letter-spacing:1px;
+    white-space:nowrap;
+  }
+
+  /* ✅ 投票済の人が見る：他の投票済タグは黒塗り */
+/* ✅ 投票済の人が見る：他の投票済タグは「太枠」 */
+.player-tag.voted-done{
+  outline:2px solid #111;
+  box-shadow:0 0 0 2px rgba(17,17,17,.12);
+}
+
+
+
+  .player-tag .mini-area{
+    --mini-x: -20px;
+    --mini-y: 13px;
+
+    --mini-cup-scale: 0.55;
+    --cup-gap: 3px;
+    --cup-dy: -40px;
+
+    position:absolute;
+    left:50%;
+    top:calc(100% + 8px);
+    transform:translate(calc(-50% + var(--mini-x)), calc(var(--mini-y)));
+    display:flex;
+    align-items:center;
+    gap:14px;
+    pointer-events:none;
+  }
+  .player-tag .mini-area .die{
+    --mini-die-y: 0px;
+    transform:translateY(var(--mini-die-y));
+  }
+
+  .player-tag .mini-hand{
+    position:relative;
+    width:22px;height:30px;pointer-events:none;
+  }
+
+  .player-tag .mini-card{
+    position:absolute;
+    left:50%;
+    top:0;
+    width:16px;
+    height:22px;
+    border-radius:4px;
+    border:1px solid #bbb;
+    background-image:url('cheesecard.jpg');
+    background-size:cover;
+    background-position:center;
+    transform:translate(-50%,0);
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+  }
+
+  .my-hand-wrapper{margin-top:16px;text-align:center;}
+  .my-hand-title{display:none;}
+  .my-hand{display:flex;justify-content:center;gap:8px;margin-top:6px;min-height:100px;}
+  .my-hand-row{display:flex;align-items:flex-start;gap:10px;}
+
+  .my-card{
+    width:60px;height:90px;border-radius:8px;border:1px solid #ddd;
+    box-shadow:0 4px 12px rgba(0,0,0,.15);
+    overflow:hidden;
+    background-image:url('cheesecard.jpg');
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    transform: translateX(-70px);
+  }
+
+  .my-hand-row .die{ position:relative; }
+
+  .dialog-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.35);
+    display:flex;align-items:center;justify-content:center;z-index:300;
+  }
+  .dialog-backdrop.hidden{display:none;}
+  .dialog-box{
+    background:#fff;border-radius:12px;padding:16px 18px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    max-width:320px;width:calc(100% - 40px);
+  }
+  .dialog-box p{margin:0 0 12px;font-size:14px;line-height:1.6;}
+  .dialog-buttons{display:flex;justify-content:flex-end;gap:8px;}
+
+  .host-settings-btn{
+    position:fixed;right:16px;bottom:16px;width:44px;height:44px;border-radius:50%;
+    border:1px solid #ddd;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.18);
+    display:none;align-items:center;justify-content:center;font-size:22px;cursor:pointer;z-index:230;
+  }
+  .host-settings-btn.visible{display:flex;}
+
+  .start-pop{
+    position:fixed;right:16px;bottom:72px;background:#fff;border:1px solid #ddd;border-radius:12px;
+    box-shadow:0 12px 28px rgba(0,0,0,.16);padding:10px 12px;z-index:240;min-width:260px;
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .start-pop.hidden{display:none;}
+  .start-pop-header{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .start-pop-title{font-size:14px;font-weight:600;}
+  .start-pop-main{font-size:13px;line-height:1.5;}
+  .start-pop-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:4px;flex-wrap:wrap;}
+
+  #roomInfoLobby, #lobby h2, #lobby p {display:none;}
+  #lobby.entered{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    min-height:calc(100vh - 60px);
+  }
+
+  .help-btn{
+    position:fixed;left:16px;bottom:16px;width:44px;height:44px;border-radius:50%;
+    border:1px solid #111;background:#111;color:#fff;
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+    display:none;align-items:center;justify-content:center;
+    font-size:22px;font-weight:800;cursor:pointer;z-index:230;
+  }
+  .help-btn.visible{display:flex;}
+
+  .help-pop-backdrop{
+    position:fixed;inset:0;background:rgba(0,0,0,.35);
+    display:flex;align-items:flex-end;justify-content:center;
+    z-index:310;
+    padding:16px;
+  }
+  .help-pop-backdrop.hidden{display:none;}
+  .help-pop{
+    width:min(520px, calc(100% - 0px));
+    max-height:min(70vh, 640px);
+    background:#fff;border:1px solid #ddd;border-radius:16px;
+    box-shadow:0 18px 40px rgba(0,0,0,.35);
+    overflow:hidden;
+  }
+  .help-pop-header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;border-bottom:1px solid #eee;
+  }
+  .help-pop-title{font-weight:800;font-size:14px;}
+  .help-pop-body{padding:12px;overflow:auto;max-height:calc(70vh - 48px);}
+  .role-row{
+    display:flex;gap:12px;align-items:flex-start;
+    padding:10px 0;
+  }
+  .role-card{
+    width:72px;height:108px;border-radius:10px;border:1px solid #ddd;background:#f8f8f8;
+    box-shadow:0 6px 16px rgba(0,0,0,.10);
+    flex:0 0 auto;
+    overflow:hidden;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+  }
+  .role-card.clickable{cursor:pointer;}
+  .role-desc{flex:1 1 auto;}
+  .role-desc .name{font-weight:900;margin-bottom:4px;}
+  .role-desc .text{font-size:13px;line-height:1.55;color:#222;white-space:pre-wrap;}
+
+  .die{
+    --size:28px;
+    width:var(--size);height:var(--size);
+    background:#fff;
+    border:2px solid #111;
+    border-radius:7px;
+    box-shadow:0 6px 16px rgba(0,0,0,.18);
+    position:relative;
+    z-index:6;
+    display:inline-block;
+    user-select:none;
+    pointer-events:none;
+  }
+  .die .pip{
+    position:absolute;
+    width:18%;height:18%;
+    background:#111;border-radius:50%;
+    display:none;
+  }
+  .die .p1{left:18%;top:18%;}
+  .die .p2{left:41%;top:18%;}
+  .die .p3{left:64%;top:18%;}
+  .die .p4{left:18%;top:41%;}
+  .die .p5{left:41%;top:41%;}
+  .die .p6{left:64%;top:41%;}
+  .die .p7{left:18%;top:64%;}
+  .die .p8{left:41%;top:64%;}
+  .die .p9{left:64%;top:64%;}
+
+  .die[data-value="1"] .p5{display:block;}
+  .die[data-value="2"] .p1,.die[data-value="2"] .p9{display:block;}
+  .die[data-value="3"] .p1,.die[data-value="3"] .p5,.die[data-value="3"] .p9{display:block;}
+  .die[data-value="4"] .p1,.die[data-value="4"] .p3,.die[data-value="4"] .p7,.die[data-value="4"] .p9{display:block;}
+  .die[data-value="5"] .p1,.die[data-value="5"] .p3,.die[data-value="5"] .p5,.die[data-value="5"] .p7,.die[data-value="5"] .p9{display:block;}
+  .die[data-value="6"] .p1,.die[data-value="6"] .p3,.die[data-value="6"] .p4,.die[data-value="6"] .p6,.die[data-value="6"] .p7,.die[data-value="6"] .p9{display:block;}
+
+  .die-cup-wrap{
+    position:relative;
+    display:inline-block;
+    width:28px;
+    height:28px;
+    overflow:visible;
+  }
+  .my-hand-row .die-cup-wrap{
+    position:relative;
+    top:58px;
+    left:-38px;
+  }
+  .cup-img{
+    position:absolute;
+    left:calc(100% + 10px);
+    top:-57px;
+    width:70px;
+    height:auto;
+    cursor:pointer;
+    user-select:none;
+    -webkit-user-drag:none;
+
+    z-index:7;
+    will-change:transform;
+    transform:translate(0,0) rotate(0deg);
+  }
+  .cup-img.is-animating{ pointer-events:none; }
+  .cup-img.is-covered{ z-index:9; }
+  .cup-img.behind-die{ z-index:4 !important; }
+
+  .player-tag .mini-area .die-cup-wrap{
+    position:relative;
+    display:inline-block;
+    width:22px;
+    height:22px;
+    overflow:visible;
+  }
+
+  .player-tag .mini-area .cup-scale{
+    position:absolute;
+    left: calc(100% + var(--cup-gap));
+    top:  calc(var(--cup-dy) * var(--mini-cup-scale));
+
+    transform: scale(var(--mini-cup-scale));
+    transform-origin: top left;
+
+    pointer-events:none;
+    z-index:7;
+  }
+  .player-tag .mini-area .cup-img{
+    position:relative;
+    left:0;
+    top:0;
+    width:70px;
+    height:auto;
+    cursor:default;
+    pointer-events:none;
+    z-index:7;
+  }
+
+  .blackout{
+    position:fixed; inset:0;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    z-index:10000;
+    transition: opacity 1200ms linear;
+  }
+  .blackout.on{ opacity:1; }
+
+  /* ✅ 最多票カード：中央拡大＋揺れ */
+  #winnerBackdrop{
+    position:fixed; inset:0;
+    background:rgba(0,0,0,.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10020;
+  }
+  #winnerBackdrop.hidden{ display:none; }
+  #winnerCard{
+    width:220px;
+    height:330px;
+    border-radius:16px;
+    border:1px solid #ddd;
+    box-shadow:0 22px 60px rgba(0,0,0,.45);
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
+    transform-origin:center;
+    animation: winnerShake 650ms ease-in-out both;
+  }
+  @keyframes winnerShake{
+    0%   { transform:scale(1) rotate(0deg); }
+    12%  { transform:scale(1.02) rotate(-2deg); }
+    24%  { transform:scale(1.03) rotate(2deg); }
+    36%  { transform:scale(1.03) rotate(-1.5deg); }
+    48%  { transform:scale(1.03) rotate(1.5deg); }
+    60%  { transform:scale(1.02) rotate(-1deg); }
+    72%  { transform:scale(1.02) rotate(1deg); }
+    100% { transform:scale(1.02) rotate(0deg); }
+  }
+
+/* ✅ 投票済み表示：黒塗りではなく太枠 */
+.player-tag.voted-outline{
+  border: 4px solid #111 !important;
+  background: #f8f8f8 !important;
+  color: #111 !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,.18);
+}
+
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>テンプレ</h1>
+  <div style="display:flex;align-items:center;gap:6px;">
+    <div class="small" id="roomInfo"></div>
+    <button class="btn ghost" id="copyLinkBtn">リンクコピー</button>
+  </div>
+</header>
+
+<main id="main" class="prejoin">
+  <div class="join-box" id="joinBox">
+    <input id="userName" placeholder="名前（4文字以内）" maxlength="4" />
+    <input id="roomCode" placeholder="ルームコード（未入力で自動生成）" maxlength="12" />
+    <button class="btn primary" id="btnJoin">入室</button>
+  </div>
+
+  <div id="lobby" class="hidden">
+    <h2>ロビー</h2>
+    <div id="roomInfoLobby" style="margin-bottom:8px;"></div>
+    <p>ここにテーブルや情報が表示されます。</p>
+
+    <div id="playerCircle" class="player-circle"></div>
+
+    <div class="my-hand-wrapper">
+      <div class="my-hand-title">自分のカード</div>
+      <div id="myHand" class="my-hand"></div>
+    </div>
+  </div>
+</main>
+
+<!-- ✅ 右上4分タイマー（headerの外） -->
+<div id="talkTimer">
+  <div class="ttext" id="talkTimerText">04:00</div>
+</div>
+
+<!-- ✅ 中央「話し合い開始！」ポップ -->
+<div id="talkStartPop" class="hidden">話し合い開始！</div>
+
+<!-- ✅ 中央「TIME UP!」ポップ -->
+<div id="timeUpPop" class="hidden">TIME UP!</div>
+
+<div id="blackout" class="blackout"></div>
+
+<div id="hostSelectingPop" class="host-selecting-pop hidden">ホストが人数を選択中</div>
+
+<div id="neboPop" class="bottom-black-pop hidden">ダイスを見たいプレイヤーのコップをクリック</div>
+
+<!-- ✅チーズ泥棒の明転後ポップ -->
+<div id="cheesePop" class="bottom-black-pop hidden">チーズをクリックして隠す</div>
+
+<!-- ✅追加：チーズ泥棒の follower 選択ポップ（条件で表示） -->
+<div id="cheeseFollowerPop" class="bottom-black-pop hidden" style="z-index:227;">
+  フォロワーを選ぶ　ネームタグをクリック
+</div>
+
+<!-- ✅追加：投票開始ポップ -->
+<div id="votePop" class="bottom-black-pop hidden" style="z-index:228;">
+  「チーズ泥棒」に投票しよう！
+</div>
+
+<div id="seatPop" class="seat-pop hidden">
+  <div class="row"><label>席を選択</label><div id="seatTabs" class="tabs"></div></div>
+  <div class="row" style="justify-content:flex-end">
+    <button class="btn small ghost" id="btnSeatCancel">観戦</button>
+  </div>
+</div>
+
+<div id="kickDialog" class="dialog-backdrop hidden">
+  <div class="dialog-box" id="kickDialogBox">
+    <p id="kickMessage">既存のプレイヤーを追い出して、着席しますか？</p>
+    <div class="dialog-buttons">
+      <button class="btn ghost" id="btnKickNo">いいえ</button>
+      <button class="btn primary" id="btnKickYes">はい</button>
+    </div>
+  </div>
+</div>
+
+<button id="hostSettingsBtn" class="host-settings-btn" title="設定">⚙</button>
+<button id="helpBtn" class="help-btn" title="正体カード一覧">？</button>
+
+<div id="helpBackdrop" class="help-pop-backdrop hidden">
+  <div class="help-pop" role="dialog" aria-modal="true" aria-label="正体カード一覧">
+    <div class="help-pop-header">
+      <div class="help-pop-title">正体カード（3種）</div>
+      <button id="btnHelpClose" class="btn ghost" style="padding:2px 6px;font-size:12px;">×</button>
+    </div>
+    <div class="help-pop-body" id="helpBody"></div>
+  </div>
+</div>
+
+<div id="startPop" class="start-pop hidden">
+  <div class="start-pop-header">
+    <div class="start-pop-title">ホスト設定</div>
+    <button id="btnStartPopClose" class="btn ghost" style="padding:2px 6px;font-size:12px;">×</button>
+  </div>
+  <div class="start-pop-main">
+    「スタート」で<strong>手札は配らず</strong>、全員に<strong>正体カードを1枚</strong>配ります。<br>
+    チーズ泥棒は1人だけ／それ以外はねぼすけ。<br>
+    ねずみは、一覧でホストがONにした時だけ1人に配られます。<br>
+    ※ダイスは「着席時」にランダムで決まり、スタートでは決まりません。
+  </div>
+  <div class="start-pop-actions">
+    <button id="btnResetRoom" class="btn ghost">リセット</button>
+    <button id="btnGameStart" class="btn primary">スタート</button>
+  </div>
+</div>
+
+<!-- ✅ 最多票カード：中央拡大 -->
+<div id="winnerBackdrop" class="hidden">
+  <div id="winnerCard"></div>
+</div>
+
+<audio id="cheeseSnd" src="cheese1.mp3" preload="auto"></audio>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import {
+  getDatabase, ref, set, get, update, onValue, remove, push, runTransaction
+} from "https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js";
+
+/* =========================
+   Firebase
+   ========================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyAMeKfMoHt9qO2VuUBpkrKuei7yGBbEi8",
+  authDomain: "cheesetheft-fd52f.firebaseapp.com",
+  databaseURL: "https://cheesetheft-fd52f-default-rtdb.firebaseio.com",
+  projectId: "cheesetheft-fd52f",
+  storageBucket: "cheesetheft-fd52f.firebasestorage.app",
+  messagingSenderId: "298688959395",
+  appId: "1:298688959395:web:6ac2c3eb214201f2020016",
+  measurementId: "G-HPDFTCLR8H"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+const savedUserId = sessionStorage.getItem('bbUserId') || crypto.randomUUID();
+sessionStorage.setItem('bbUserId', savedUserId);
+
+const ROLE_IMG = {
+  doroboo: 'doroboo.jpg',
+  nebosuke: 'nebosuke.jpg',
+  nezumi: 'nezumi.jpg'
+};
+
+/* =========================
+   State
+   ========================= */
+const state = {
+  userId: savedUserId,
+  userName: null,
+  roomCode: null,
+  seatedTable: null,
+  isHost: false,
+  hands: {},
+  dice: {},
+  cups: {},
+  prevDice: {},
+  prevCups: {},
+  room: {},
+  roleFlags: { nezumiRevealed: false },
+
+  gameStarted: false,
+
+  firstCupDone: false,
+  lastBlackoutId: null,
+  currentBlackoutId: null,
+  lastStartResetId: null,
+
+  cupState: {
+    covered:false,
+    transform:'translate(0px, 0px) rotate(0deg)',
+    lifted:false
+  },
+
+  forceCup3Active: false,
+  forcedCup3: new Map(),
+  forcedCup3Pids: new Set(),
+
+  afterBright: false,
+
+  cheeseGone: false,
+  lastCheeseGoneId: null,
+
+  myNeboPeek: null,
+  blackoutDoneMap: {},
+  blackoutDoneLoaded: false,
+  pendingBlackoutEv: null,
+
+  roomLoaded: false,
+  playersLoaded: false,
+  handsLoaded: false,
+  diceLoaded: false,
+
+  listenStartAt: 0,
+
+  cheeseFollow: null,
+
+  /* ✅話し合いタイマー */
+  discussionTimer: null,
+  lastDiscussionTimerId: null,
+  discussionTimerLoaded: false,
+
+  /* ✅ 投票フェーズ */
+  timeUp: null,
+  lastTimeUpId: null,
+  votes: {},
+  myVoteTarget: null,
+  voteResult: null,
+  lastVoteResultId: null,
+};
+
+/* =========================
+   DOM
+   ========================= */
+const mainEl = document.getElementById('main');
+const joinBox = document.getElementById('joinBox');
+const inputName = document.getElementById('userName');
+const inputCode = document.getElementById('roomCode');
+const btnJoin = document.getElementById('btnJoin');
+const lobby = document.getElementById('lobby');
+const roomInfo = document.getElementById('roomInfo');
+const roomInfoLobby = document.getElementById('roomInfoLobby');
+const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+const hostSelectingPop = document.getElementById('hostSelectingPop');
+const neboPop = document.getElementById('neboPop');
+const cheesePop = document.getElementById('cheesePop');
+const cheeseFollowerPop = document.getElementById('cheeseFollowerPop');
+const votePop = document.getElementById('votePop');
+
+const seatPop = document.getElementById('seatPop');
+const seatTabs = document.getElementById('seatTabs');
+const btnSeatCancel = document.getElementById('btnSeatCancel');
+const seatLabel = seatPop.querySelector('label');
+
+const playerCircle = document.getElementById('playerCircle');
+const myHandEl = document.getElementById('myHand');
+
+const kickDialog = document.getElementById('kickDialog');
+const kickMessage = document.getElementById('kickMessage');
+const btnKickYes = document.getElementById('btnKickYes');
+const btnKickNo = document.getElementById('btnKickNo');
+
+const hostSettingsBtn = document.getElementById('hostSettingsBtn');
+const startPop = document.getElementById('startPop');
+const btnStartPopClose = document.getElementById('btnStartPopClose');
+const btnGameStart = document.getElementById('btnGameStart');
+const btnResetRoom = document.getElementById('btnResetRoom');
+
+const helpBtn = document.getElementById('helpBtn');
+const helpBackdrop = document.getElementById('helpBackdrop');
+const btnHelpClose = document.getElementById('btnHelpClose');
+const helpBody = document.getElementById('helpBody');
+
+/* ✅話し合いタイマーDOM */
+const talkTimerEl = document.getElementById('talkTimer');
+const talkTimerTextEl = document.getElementById('talkTimerText');
+const talkStartPopEl = document.getElementById('talkStartPop');
+const timeUpPopEl = document.getElementById('timeUpPop');
+
+/* ✅最多票カード */
+const winnerBackdropEl = document.getElementById('winnerBackdrop');
+const winnerCardEl = document.getElementById('winnerCard');
+
+let pendingSeatIndexToSteal = null;
+let pendingSeatPlayerIdToSteal = null;
+let isRenderingSeatTabs = false;
+let latestPlayers = [];
+
+/* =========================
+   ★ねぼ権利の遅延確定
+   ========================= */
+let neboSyncTimer = null;
+function requestNeboPeekSync(){
+  if (!state.roomCode) return;
+  if (neboSyncTimer) return;
+  neboSyncTimer = setTimeout(() => {
+    neboSyncTimer = null;
+    syncMyNeboPeekEligibilityToDB().catch(()=>{});
+  }, 60);
+}
+
+/* =========================
+   ★音声：自動再生ブロック対策
+   ========================= */
+const cheeseSndEl = document.getElementById('cheeseSnd');
+let cheeseAudioUnlocked = false;
+
+function unlockCheeseAudio(){
+  if (!cheeseSndEl || cheeseAudioUnlocked) return;
+
+  cheeseSndEl.muted = true;
+  const p = cheeseSndEl.play();
+  if (p && typeof p.then === 'function'){
+    p.then(() => {
+      cheeseSndEl.pause();
+      cheeseSndEl.currentTime = 0;
+      cheeseSndEl.muted = false;
+      cheeseAudioUnlocked = true;
+    }).catch(() => {});
+  } else {
+    try{
+      cheeseSndEl.pause();
+      cheeseSndEl.currentTime = 0;
+      cheeseSndEl.muted = false;
+      cheeseAudioUnlocked = true;
+    }catch{}
+  }
+}
+function playCheeseSoundNow(){
+  if (!cheeseSndEl) return;
+  try{
+    cheeseSndEl.currentTime = 0;
+    const p = cheeseSndEl.play();
+    if (p && typeof p.catch === 'function') p.catch(()=>{});
+  }catch{}
+}
+window.addEventListener('pointerdown', unlockCheeseAudio, { once:true });
+
+/* =========================
+   Utils
+   ========================= */
+function generateRoomCode(length = 6){
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for(let i=0;i<length;i++) code += chars.charAt(Math.floor(Math.random()*chars.length));
+  return code;
+}
+function shuffle(arr){
+  const a = [...arr];
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+function clampDieValue(v){
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(6, Math.max(1, Math.floor(n)));
+}
+function randomDieValue(){
+  return 1 + Math.floor(Math.random() * 6);
+}
+
+/* =========================
+   refs
+   ========================= */
+function diceRefFor(pid){ return ref(db, `rooms/${state.roomCode}/dice/${pid}`); }
+function cupRefFor(pid){  return ref(db, `rooms/${state.roomCode}/cups/${pid}`); }
+
+function diceLogRef(pid){ return ref(db, `rooms/${state.roomCode}/logs/diceChanges/${pid}`); }
+function cupLogRef(pid){  return ref(db, `rooms/${state.roomCode}/logs/cupMoves/${pid}`); }
+
+function neboPeekRefFor(pid){ return ref(db, `rooms/${state.roomCode}/neboPeek/${pid}`); }
+function cheeseFollowRef(){ return ref(db, `rooms/${state.roomCode}/events/cheeseFollow`); }
+
+/* ✅話し合いタイマーref */
+function discussionTimerRef(){ return ref(db, `rooms/${state.roomCode}/events/discussionTimer`); }
+
+/* ✅投票ref */
+function timeUpRef(){ return ref(db, `rooms/${state.roomCode}/events/timeUp`); }
+function votesRef(){ return ref(db, `rooms/${state.roomCode}/votes`); }
+function voteResultRef(){ return ref(db, `rooms/${state.roomCode}/events/voteResult`); }
+
+function currentRoundId(){
+  return state.currentBlackoutId || state.lastBlackoutId || state.room?.startedAt || 'round0';
+}
+
+/* =========================
+   logs
+   ========================= */
+async function logDiceChange(pid, value){
+  if (!state.roomCode || !pid) return;
+  await push(diceLogRef(pid), { value: clampDieValue(value), at: Date.now(), by: state.userId });
+}
+async function logCupMove(pid, cupState){
+  if (!state.roomCode || !pid) return;
+  await push(cupLogRef(pid), { ...(cupState||{}), at: Date.now(), by: state.userId });
+}
+
+async function ensureDieForPlayer(pid){
+  if (!state.roomCode || !pid) return;
+  const s = await get(diceRefFor(pid));
+  if (!s.exists()){
+    await set(diceRefFor(pid), { value: randomDieValue() });
+  }
+}
+async function ensureCupForPlayer(pid){
+  if (!state.roomCode || !pid) return;
+  const s = await get(cupRefFor(pid));
+  if (!s.exists()){
+    await set(cupRefFor(pid), defaultCupState());
+  }
+}
+
+async function transferPlayerState(fromPid, toPid){
+  if (!state.roomCode || !fromPid || !toPid) return;
+  const base = `rooms/${state.roomCode}`;
+
+  const [h, d, c, diceLog, cupLog, neboPeek] = await Promise.all([
+    get(ref(db, `${base}/hands/${fromPid}`)),
+    get(ref(db, `${base}/dice/${fromPid}`)),
+    get(ref(db, `${base}/cups/${fromPid}`)),
+    get(ref(db, `${base}/logs/diceChanges/${fromPid}`)),
+    get(ref(db, `${base}/logs/cupMoves/${fromPid}`)),
+    get(ref(db, `${base}/neboPeek/${fromPid}`)),
+  ]);
+
+  const updates = {};
+  if (h.exists())       updates[`hands/${toPid}`] = h.val();
+  if (d.exists())       updates[`dice/${toPid}`]  = d.val();
+  if (c.exists())       updates[`cups/${toPid}`]  = c.val();
+  if (diceLog.exists()) updates[`logs/diceChanges/${toPid}`] = diceLog.val();
+  if (cupLog.exists())  updates[`logs/cupMoves/${toPid}`]    = cupLog.val();
+  if (neboPeek.exists()) updates[`neboPeek/${toPid}`] = neboPeek.val();
+
+  if (Object.keys(updates).length){
+    await update(ref(db, base), updates);
+  }
+}
+
+function createDieEl(sizePx=28){
+  const die = document.createElement('div');
+  die.className = 'die';
+  die.style.setProperty('--size', sizePx + 'px');
+  die.dataset.value = '1';
+  for(let i=1;i<=9;i++){
+    const pip = document.createElement('span');
+    pip.className = 'pip p' + i;
+    die.appendChild(pip);
+  }
+  return die;
+}
+function setDieFace(dieEl, value){
+  dieEl.dataset.value = String(clampDieValue(value));
+}
+function applyDieStateToEl(dieEl, diceState){
+  const v = clampDieValue(diceState?.value ?? 1);
+  setDieFace(dieEl, v);
+}
+
+/* =========================
+   ✅ 話し合いタイマー（4分）同期
+   ========================= */
+const TALK_DURATION_MS = 4 * 1 * 1000;
+let talkTick = null;
+
+function formatMMSS(ms){
+  const sec = Math.max(0, Math.ceil(Number(ms || 0) / 1000));
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function calcRemainingMs(ev){
+  const duration = Number(ev?.durationMs ?? TALK_DURATION_MS);
+  const startedAt = Number(ev?.startedAt || 0);
+  const accPause = Number(ev?.accumulatedPauseMs || 0);
+
+  if (!startedAt) return duration;
+
+  const now = Date.now();
+  if (ev?.running){
+    const elapsed = now - startedAt - accPause;
+    return Math.max(0, duration - elapsed);
+  } else {
+    const pausedAt = Number(ev?.pausedAt || now);
+    const elapsed = pausedAt - startedAt - accPause;
+    return Math.max(0, duration - elapsed);
+  }
+}
+
+function stopTalkTicker(){
+  if (talkTick){
+    clearInterval(talkTick);
+    talkTick = null;
+  }
+}
+
+function ensureTalkTicker(){
+  if (talkTick) return;
+  talkTick = setInterval(() => {
+    updateTalkTimerUI();
+  }, 200);
+}
+
+function showTalkStartPop(){
+  if (!talkStartPopEl) return;
+  talkStartPopEl.classList.remove('hidden');
+  talkStartPopEl.classList.remove('show');
+  void talkStartPopEl.offsetWidth;
+  talkStartPopEl.classList.add('show');
+  setTimeout(() => {
+    talkStartPopEl.classList.remove('show');
+    talkStartPopEl.classList.add('hidden');
+  }, 1700);
+}
+
+function showTimeUpPop(){
+  if (!timeUpPopEl) return;
+  timeUpPopEl.classList.remove('hidden');
+  timeUpPopEl.classList.remove('show');
+  void timeUpPopEl.offsetWidth;
+  timeUpPopEl.classList.add('show');
+  setTimeout(() => {
+    timeUpPopEl.classList.remove('show');
+    timeUpPopEl.classList.add('hidden');
+  }, 1700);
+}
+
+function shouldShowTalkTimer(){
+  if (!state.gameStarted) return false;
+  if (!isAfterBrightNow()) return false;
+
+  const hasEv = !!state.discussionTimer?.id;
+  if (state.isHost) return true;
+  return hasEv;
+}
+
+function updateTalkTimerUI(){
+  if (!talkTimerEl) return;
+
+  const visible = shouldShowTalkTimer();
+  talkTimerEl.classList.toggle('visible', visible);
+
+  if (!visible){
+    stopTalkTicker();
+    return;
+  }
+
+  const hostReady = state.isHost && state.gameStarted && isAfterBrightNow();
+  talkTimerEl.classList.toggle('host-ready', hostReady);
+
+  talkTimerEl.style.pointerEvents = hostReady ? 'auto' : 'none';
+  talkTimerEl.style.cursor = hostReady ? 'pointer' : 'default';
+
+  const ev = state.discussionTimer;
+  const rem = ev?.id ? calcRemainingMs(ev) : TALK_DURATION_MS;
+
+  talkTimerTextEl.textContent = formatMMSS(rem);
+
+  talkTimerEl.classList.toggle('running', !!ev?.running);
+  talkTimerEl.classList.toggle('paused', !!ev?.id && !ev?.running);
+
+  ensureTalkTicker();
+
+  /* ✅ 0になった瞬間：ホストが止める＋TIME UPイベント発火（1回だけ） */
+  if (state.isHost && ev?.id && ev?.running && rem <= 0){
+    const timerId = ev.id;
+
+    runTransaction(discussionTimerRef(), (cur) => {
+      if (!cur || !cur.id) return cur;
+      if (!cur.running) return cur;
+      const now = Date.now();
+      return { ...cur, running:false, pausedAt: now, endedAt: now };
+    }).catch(()=>{});
+
+    // TIME UP: voterIds(当時の参加者)を固定
+    runTransaction(timeUpRef(), (cur) => {
+      if (cur && cur.id) return cur;
+      const voterIds = (latestPlayers || []).map(p=>p.id).filter(Boolean);
+      return {
+        id: crypto.randomUUID(),
+        at: Date.now(),
+        timerId,
+        voterIds,
+        roundId: currentRoundId(),
+      };
+    }).catch(()=>{});
+  }
+}
+
+async function toggleDiscussionTimer(){
+  if (!state.roomCode) return;
+  if (!state.isHost) return;
+  if (!state.gameStarted || !isAfterBrightNow()) return;
+
+  await runTransaction(discussionTimerRef(), (cur) => {
+    const now = Date.now();
+
+    if (!cur || !cur.id){
+      return {
+        id: crypto.randomUUID(),
+        durationMs: TALK_DURATION_MS,
+        startedAt: now,
+        running: true,
+        pausedAt: null,
+        accumulatedPauseMs: 0,
+        by: state.userId
+      };
+    }
+
+    const rem = calcRemainingMs(cur);
+    if (rem <= 0){
+      return {
+        id: crypto.randomUUID(),
+        durationMs: TALK_DURATION_MS,
+        startedAt: now,
+        running: true,
+        pausedAt: null,
+        accumulatedPauseMs: 0,
+        by: state.userId
+      };
+    }
+
+    if (cur.running){
+      return { ...cur, running:false, pausedAt: now, pausedBy: state.userId };
+    } else {
+      const pausedAt = Number(cur.pausedAt || now);
+      const acc = Number(cur.accumulatedPauseMs || 0) + Math.max(0, now - pausedAt);
+      return { ...cur, running:true, pausedAt:null, accumulatedPauseMs: acc, resumedAt: now, resumedBy: state.userId };
+    }
+  });
+}
+
+/* ✅ 修正版：開始ポップは“ホスト開始の瞬間に居た端末”だけ */
+function subscribeDiscussionTimer(){
+  const r = discussionTimerRef();
+  onValue(r, snap => {
+    const ev = snap.val() || null;
+
+    const prevId = state.lastDiscussionTimerId;
+    const prevLoaded = state.discussionTimerLoaded;
+
+    state.discussionTimer = ev;
+    state.lastDiscussionTimerId = ev?.id || null;
+    state.discussionTimerLoaded = true;
+
+    const joinedAt  = Number(state.listenStartAt || 0);
+    const startedAt = Number(ev?.startedAt || 0);
+
+    const idChanged = (state.lastDiscussionTimerId && state.lastDiscussionTimerId !== prevId);
+    const canShowByTime = (startedAt && joinedAt && startedAt >= (joinedAt - 300));
+
+    if ((idChanged || (!prevLoaded && state.lastDiscussionTimerId)) && canShowByTime){
+      showTalkStartPop();
+    }
+
+    updateTalkTimerUI();
+  });
+}
+
+talkTimerEl.addEventListener('click', (e) => {
+  e.stopPropagation();
+  toggleDiscussionTimer().catch(()=>{});
+});
+
+/* =========================
+   ✅ 投票フェーズ
+   ========================= */
+function clearVoteMarks(){
+  document.querySelectorAll('.vote-me-mark,.vote-count').forEach(el => el.remove());
+  document.querySelectorAll('.player-tag').forEach(tag => tag.classList.remove('voted-done'));
+}
+function updateVotePop(){
+  if (!votePop) return;
+  const active = !!state.timeUp?.id && !state.voteResult?.id;
+  votePop.classList.toggle('hidden', !active);
+}
+function setMyVoteMark(targetPid){
+  document.querySelectorAll('.vote-me-mark').forEach(el => el.remove());
+  if (!targetPid) return;
+  const tag = document.querySelector(`.player-tag[data-pid="${targetPid}"]`);
+  if (!tag) return;
+  const m = document.createElement('div');
+  m.className = 'vote-me-mark';
+  m.textContent = '✉';
+  tag.appendChild(m);
+}
+function setVoteCounts(counts){
+  document.querySelectorAll('.vote-count').forEach(el => el.remove());
+  if (!counts) return;
+
+  for (const [pid, n] of Object.entries(counts)){
+    const tag = document.querySelector(`.player-tag[data-pid="${pid}"]`);
+    if (!tag) continue;
+    const c = document.createElement('div');
+    c.className = 'vote-count';
+    c.textContent = '✉'.repeat(Math.max(0, Number(n)||0));
+    tag.appendChild(c);
+  }
+}
+function applyVotedBlackRule(){
+  // 自分が投票済なら、「他の投票済の人」を黒塗
+  const meVoted = !!state.votes?.[state.userId]?.targetPid;
+  document.querySelectorAll('.player-tag[data-pid]').forEach(tag => {
+    const pid = tag.dataset.pid;
+    if (!pid) return;
+
+    // 自分タグは元々meで黒いのでここでは触らない
+    if (!meVoted || pid === state.userId){
+      tag.classList.remove('voted-done');
+      return;
+    }
+
+    const otherVoted = !!state.votes?.[pid]?.targetPid;
+    tag.classList.toggle('voted-done', otherVoted);
+  });
+}
+function revealAllIdentityCards(){
+  // mini-card を全員表に
+  document.querySelectorAll('.player-tag[data-pid] .mini-card').forEach(mini => {
+    const pid = mini.closest('.player-tag')?.dataset?.pid;
+    if (!pid) return;
+    mini.style.backgroundImage = `url('${getCardImgForPid(pid)}')`;
+    // red-tint は維持（消さない）
+  });
+
+  // 自分カードも表に
+  const myCard = document.querySelector('#myHand .my-card');
+  if (myCard){
+    const myImg = getCardImgForPid(state.userId);
+    myCard.style.backgroundImage = `url('${myImg}')`;
+  }
+}
+function isPidRedTintForViewer(pid){
+  const mini = document.querySelector(`.player-tag[data-pid="${pid}"] .mini-card`);
+  if (mini && mini.classList.contains('red-tint')) return true;
+  if (pid === state.userId){
+    const myCard = document.querySelector('#myHand .my-card');
+    if (myCard && myCard.classList.contains('red-tint')) return true;
+  }
+  return false;
+}
+function showWinnerCard(pid){
+  if (!winnerBackdropEl || !winnerCardEl) return;
+  if (!pid) return;
+
+  winnerCardEl.classList.remove('red-tint');
+  winnerCardEl.style.backgroundImage = `url('${getCardImgForPid(pid)}')`;
+
+
+  winnerBackdropEl.classList.remove('hidden');
+  // アニメを毎回再生
+  winnerCardEl.style.animation = 'none';
+  void winnerCardEl.offsetWidth;
+  winnerCardEl.style.animation = '';
+
+  setTimeout(() => {
+    winnerBackdropEl.classList.add('hidden');
+  }, 2200);
+}
+winnerBackdropEl?.addEventListener('click', () => winnerBackdropEl.classList.add('hidden'));
+
+async function setMyVote(targetPid){
+  if (!state.roomCode || !state.timeUp?.id) return;
+  if (!targetPid || targetPid === state.userId) return;
+  if (state.voteResult?.id) return;
+
+  // フォロワー選択などの優先処理中は投票しない（誤クリック防止）
+  if (cheeseFollowerPop && !cheeseFollowerPop.classList.contains('hidden')) return;
+
+  await set(ref(db, `rooms/${state.roomCode}/votes/${state.userId}`), {
+    targetPid,
+    at: Date.now()
+  });
+}
+
+async function maybeFinalizeVoteResult(){
+  if (!state.roomCode) return;
+  if (!state.timeUp?.id) return;
+
+  // 既に結果があるなら何もしない
+  const resSnap = await get(voteResultRef());
+  if (resSnap.exists() && resSnap.val()?.id) return;
+
+  const voterIds = Array.isArray(state.timeUp.voterIds) ? state.timeUp.voterIds : [];
+  if (!voterIds.length) return;
+
+  // 全員分の投票が揃ってるか
+  for (const vid of voterIds){
+    const v = state.votes?.[vid]?.targetPid;
+    if (!v) return;
+  }
+
+  // 集計
+  const counts = {};
+  for (const vid of voterIds){
+    const t = state.votes?.[vid]?.targetPid;
+    if (!t) continue;
+    counts[t] = (counts[t] || 0) + 1;
+  }
+
+  // winner決定（同票ならpid昇順で最初）
+  let max = -1;
+  let winners = [];
+  for (const [pid, n] of Object.entries(counts)){
+    const nn = Number(n)||0;
+    if (nn > max){
+      max = nn;
+      winners = [pid];
+    } else if (nn === max){
+      winners.push(pid);
+    }
+  }
+  winners.sort();
+  const winnerPid = winners[0] || null;
+
+  await runTransaction(voteResultRef(), (cur) => {
+    if (cur && cur.id) return cur;
+    return {
+      id: crypto.randomUUID(),
+      at: Date.now(),
+      timeUpId: state.timeUp.id,
+      roundId: state.timeUp.roundId || currentRoundId(),
+      voterIds,
+      counts,
+      max,
+      winners,
+      winnerPid
+    };
+  });
+}
+
+function subscribeTimeUp(){
+  onValue(timeUpRef(), snap => {
+    const ev = snap.val() || null;
+    const prevId = state.lastTimeUpId;
+
+    state.timeUp = ev;
+    state.lastTimeUpId = ev?.id || null;
+
+    if (ev?.id && ev.id !== prevId){
+      // TIME UP 表示
+      showTimeUpPop();
+      // 投票フェーズ開始
+      clearVoteMarks();
+      updateVotePop();
+      applyVotedBlackRule();
+      setMyVoteMark(state.votes?.[state.userId]?.targetPid || null);
+      // 結果が既にあるなら後段で反映
+    } else {
+      updateVotePop();
+    }
+  });
+}
+
+function subscribeVotes(){
+  onValue(votesRef(), snap => {
+    state.votes = snap.val() || {};
+    const myTarget = state.votes?.[state.userId]?.targetPid || null;
+    state.myVoteTarget = myTarget;
+
+    // 自分の選択マーク
+    if (!state.voteResult?.id){
+      setMyVoteMark(myTarget);
+    } else {
+      document.querySelectorAll('.vote-me-mark').forEach(el => el.remove());
+    }
+
+    // 黒塗ルール
+    applyVotedBlackRule();
+
+    // 揃ったら集計（誰がやってもOK / transactionで二重防止）
+    maybeFinalizeVoteResult().catch(()=>{});
+  });
+}
+
+function subscribeVoteResult(){
+  onValue(voteResultRef(), snap => {
+    const r = snap.val() || null;
+    const prevId = state.lastVoteResultId;
+
+    state.voteResult = r;
+    state.lastVoteResultId = r?.id || null;
+
+    if (!r?.id){
+      // 結果なし状態へ
+      document.querySelectorAll('.vote-count').forEach(el => el.remove());
+      updateVotePop();
+      return;
+    }
+
+    // 結果表示
+    updateVotePop();
+
+    // 投票中マークは消す
+    document.querySelectorAll('.vote-me-mark').forEach(el => el.remove());
+
+    // 票数を✉で表示
+    setVoteCounts(r.counts || {});
+
+    // 全員の正体カードを表に
+    revealAllIdentityCards();
+
+    // 1秒後：最多票カードを中央拡大＋揺れ（同じ結果idでは1回だけ）
+    if (r.id !== prevId){
+      setTimeout(() => {
+        showWinnerCard(r.winnerPid);
+      }, 1000);
+    }
+  });
+}
+
+/* =========================
+   暗転中：同じダイス目の他人cupをローカル強制cup3
+   ========================= */
+function getDieValueOf(pid){
+  const raw = state.dice?.[pid]?.value;
+  if (raw == null) return null;
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return null;
+  return clampDieValue(n);
+}
+function getDieElFor(pid){
+  return document.querySelector(`.die[data-pid="${pid}"]`);
+}
+function getCupElFor(pid){
+  return document.querySelector(`img.cup-img[data-pid="${pid}"]`);
+}
+function getMiniScaleWrapFor(pid){
+  return document.querySelector(`.cup-scale[data-pid="${pid}"]`);
+}
+function syncCupZForMini(pid, cupEl){
+  const sw = getMiniScaleWrapFor(pid);
+  if (!sw) return;
+  sw.style.zIndex = cupEl.classList.contains('behind-die') ? '4' : '7';
+}
+
+function forceCupElToCup3Visual(pid){
+  const cupEl = getCupElFor(pid);
+  if (!cupEl) return;
+
+  if (!state.forcedCup3.has(pid)){
+    state.forcedCup3.set(pid, {
+      src: cupEl.src,
+      className: cupEl.className,
+      transform: cupEl.style.transform
+    });
+  }
+
+  try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+  if (cupEl._imgTimers){
+    cupEl._imgTimers.forEach(t => clearTimeout(t));
+    cupEl._imgTimers = null;
+  }
+
+  const base = state.cups?.[pid]?.transform || 'translate(0px, 0px) rotate(0deg)';
+  const LIFT_Y = -15;
+
+  cupEl.classList.remove('is-animating');
+  cupEl.classList.add('is-covered');
+  cupEl.classList.add('behind-die');
+  cupEl.src = 'cup3.png';
+  cupEl.style.transform = `${base} translateY(${LIFT_Y}px)`;
+
+  syncCupZForMini(pid, cupEl);
+}
+
+let cup3RecalcTimer = null;
+function scheduleRecalcSameDiceCup3(){
+  if (cup3RecalcTimer) return;
+  cup3RecalcTimer = setTimeout(() => {
+    cup3RecalcTimer = null;
+    applySameDiceCup3Local();
+  }, 60);
+}
+
+function applySameDiceCup3Local(){
+  const blackoutEl = document.getElementById('blackout');
+  if (!blackoutEl || !blackoutEl.classList.contains('on')) return;
+
+  const myV = getDieValueOf(state.userId);
+  if (myV == null) return;
+
+  for (const p of latestPlayers){
+    if (!p?.id) continue;
+    if (getDieValueOf(p.id) == null) return;
+  }
+
+  const nextSet = new Set();
+  for (const p of latestPlayers){
+    if (!p?.id) continue;
+    if (p.id === state.userId) continue;
+    const v = getDieValueOf(p.id);
+    if (v === myV) nextSet.add(p.id);
+  }
+
+  state.forceCup3Active = true;
+
+  for (const pid of Array.from(state.forcedCup3Pids)){
+    if (!nextSet.has(pid)){
+      const cupEl = getCupElFor(pid);
+      if (cupEl && state.forcedCup3.has(pid)){
+        const snap = state.forcedCup3.get(pid);
+        try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+        if (cupEl._imgTimers){ cupEl._imgTimers.forEach(t=>clearTimeout(t)); cupEl._imgTimers=null; }
+        cupEl.src = snap.src;
+        cupEl.className = snap.className;
+        cupEl.style.transform = snap.transform;
+      }
+      state.forcedCup3.delete(pid);
+      state.forcedCup3Pids.delete(pid);
+      refreshCupVisualForPid(pid);
+    }
+  }
+
+  for (const pid of nextSet){
+    state.forcedCup3Pids.add(pid);
+    forceCupElToCup3Visual(pid);
+  }
+}
+
+function clearSameDiceCup3Local(){
+  for (const [pid, snap] of state.forcedCup3.entries()){
+    const cupEl = getCupElFor(pid);
+    if (!cupEl) continue;
+
+    try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+    if (cupEl._imgTimers){
+      cupEl._imgTimers.forEach(t => clearTimeout(t));
+      cupEl._imgTimers = null;
+    }
+
+    cupEl.src = snap.src;
+    cupEl.className = snap.className;
+    cupEl.style.transform = snap.transform;
+
+    const cs = state.cups?.[pid];
+    if (cs){
+      applyCupStateToEl(cupEl, cs);
+      syncCupZForMini(pid, cupEl);
+    }
+  }
+  state.forcedCup3.clear();
+  state.forcedCup3Pids.clear();
+  state.forceCup3Active = false;
+}
+
+/* =========================
+   ✅ねぼ覗き：cup3表示は「自分の画面だけ」ローカル上書き
+   ========================= */
+function isMyPeekTarget(pid){
+  const np = state.myNeboPeek;
+  if (!np || !np.used || !np.targetPid) return false;
+  if (np.roundId !== currentRoundId()) return false;
+  if (!state.gameStarted || !isAfterBrightNow()) return false;
+
+  if (!state.cups?.[pid]?.covered) return false;
+  return pid === np.targetPid;
+}
+
+function applyMyPeekOverrideToEl(pid, cupEl){
+  if (!isMyPeekTarget(pid)) return false;
+
+  const base = state.cups?.[pid]?.transform || 'translate(0px, 0px) rotate(0deg)';
+  const LIFT_Y = -15;
+
+  try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+  if (cupEl._imgTimers){
+    cupEl._imgTimers.forEach(t => clearTimeout(t));
+    cupEl._imgTimers = null;
+  }
+
+  cupEl.classList.remove('is-animating');
+  cupEl.classList.add('is-covered','behind-die');
+  cupEl.src = 'cup3.png';
+  cupEl.style.transform = `${base} translateY(${LIFT_Y}px)`;
+  syncCupZForMini(pid, cupEl);
+  return true;
+}
+
+function refreshCupVisualForPid(pid){
+  const cupEl = getCupElFor(pid);
+  if (!cupEl) return;
+
+  if (applyMyPeekOverrideToEl(pid, cupEl)) return;
+
+  if (pid === state.userId){
+    if (cupEl.classList.contains('is-animating')) return;
+    const merged = { ...(state.cups?.[pid] || defaultCupState()), lifted: state.cupState.lifted };
+    applyCupStateToEl(cupEl, merged);
+    syncCupZForMini(pid, cupEl);
+    return;
+  } else {
+    const cs = state.cups?.[pid] || defaultCupState();
+    applyCupStateToEl(cupEl, { ...cs, lifted:false });
+    syncCupZForMini(pid, cupEl);
+  }
+}
+
+/* =========================
+   明るくなった後の「ねぼすけ権利」判定 → DB保存
+   ========================= */
+function getMyRoleKey(){
+  const h = state.hands?.[state.userId];
+  const k = h?.cards?.[0]?.key;
+  return k || null;
+}
+function hasAnySameDiceAsMe(){
+  const myV = getDieValueOf(state.userId);
+  if (myV == null) return false;
+  for (const p of latestPlayers){
+    if (!p?.id) continue;
+    if (p.id === state.userId) continue;
+    const v = getDieValueOf(p.id);
+    if (v == null) return false;
+    if (v === myV) return true;
+  }
+  return false;
+}
+function isNeboPeekCheckReady(){
+  if (!state.roomLoaded || !state.playersLoaded || !state.handsLoaded || !state.diceLoaded) return false;
+  if (!state.gameStarted || !isAfterBrightNow()) return false;
+
+  const myRole = getMyRoleKey();
+  if (!myRole) return false;
+
+  if (!state.dice?.[state.userId] || state.dice[state.userId].value == null) return false;
+
+  for (const p of latestPlayers){
+    if (!p?.id) continue;
+    if (!state.dice?.[p.id] || state.dice[p.id].value == null) return false;
+  }
+  return true;
+}
+
+async function syncMyNeboPeekEligibilityToDB(){
+  if (!state.roomCode || !state.userId) return;
+  if (!state.gameStarted) return;
+
+  if (!isNeboPeekCheckReady()) return;
+
+  const roundId = currentRoundId();
+
+  const eligible =
+    (getMyRoleKey() === 'nebosuke') &&
+    (!hasAnySameDiceAsMe());
+
+  const r = neboPeekRefFor(state.userId);
+  const snap = await get(r);
+  const cur = snap.val();
+
+  if (!eligible){
+    if (cur?.used) return;
+    if (snap.exists()) await remove(r);
+    return;
+  }
+
+  if (!cur || cur.roundId !== roundId){
+    await set(r, {
+      eligible: true,
+      used: false,
+      targetPid: null,
+      roundId,
+      createdAt: Date.now()
+    });
+    return;
+  }
+
+  if (cur.used) return;
+
+  if (!cur.eligible){
+    await update(r, { eligible:true });
+  }
+}
+
+function shouldShowNeboPop(){
+  if (!state.gameStarted) return false;
+  if (!isAfterBrightNow()) return false;
+
+  const np = state.myNeboPeek;
+  if (!np) return false;
+  if (!np.eligible) return false;
+  if (np.used) return false;
+
+  return true;
+}
+function updateNeboPop(){
+  if (!neboPop) return;
+  const followerShowing = !cheeseFollowerPop.classList.contains('hidden');
+  const votingShowing = !votePop.classList.contains('hidden');
+  neboPop.classList.toggle('hidden', followerShowing || votingShowing || !shouldShowNeboPop());
+}
+
+function canUseNeboPeekOn(targetPid){
+  if (!state.gameStarted) return false;
+  if (!isAfterBrightNow()) return false;
+  if (!targetPid || targetPid === state.userId) return false;
+
+  const np = state.myNeboPeek;
+  if (!np || !np.eligible || np.used) return false;
+
+  const cs = state.cups?.[targetPid];
+  if (!cs || !cs.covered) return false;
+
+  return true;
+}
+
+async function useNeboPeek(targetPid){
+  if (!canUseNeboPeekOn(targetPid)) return;
+
+  const roundId = currentRoundId();
+
+  const tx = await runTransaction(neboPeekRefFor(state.userId), (cur) => {
+    if (!cur) return;
+    if (cur.roundId !== roundId) return;
+    if (!cur.eligible) return;
+    if (cur.used) return;
+    return { ...cur, used:true, usedAt: Date.now(), targetPid };
+  });
+
+  if (!tx.committed) return;
+
+  refreshCupVisualForPid(targetPid);
+}
+
+/* =========================
+   🧀消失＆点線ライン ＋ チーズ泥棒ポップ
+   ========================= */
+function findDorobooId(){
+  const hands = state.hands || {};
+  for (const [pid, h] of Object.entries(hands)){
+    const k = h?.cards?.[0]?.key;
+    if (k === 'doroboo') return pid;
+  }
+  return null;
+}
+function canClickCheeseNow(){
+  if (!state.gameStarted) return false;
+  if (!isAfterBrightNow()) return false;
+  if (state.cheeseGone) return false;
+  return getMyRoleKey() === 'doroboo';
+}
+async function fireCheeseGone(){
+  if (!state.roomCode) return;
+  await set(ref(db, `rooms/${state.roomCode}/events/cheeseGone`), {
+    id: crypto.randomUUID(),
+    by: state.userId,
+    at: Date.now()
+  });
+}
+function shouldShowCheesePop(){
+  if (!state.gameStarted) return false;
+  if (!isAfterBrightNow()) return false;
+  if (state.cheeseGone) return false;
+  return (getMyRoleKey() === 'doroboo');
+}
+function updateCheesePop(){
+  if (!cheesePop) return;
+  const followerShowing = !cheeseFollowerPop.classList.contains('hidden');
+  const votingShowing = !votePop.classList.contains('hidden');
+  cheesePop.classList.toggle('hidden', followerShowing || votingShowing || !shouldShowCheesePop());
+}
+function subscribeCheeseGone(){
+  const cgRef = ref(db, `rooms/${state.roomCode}/events/cheeseGone`);
+  onValue(cgRef, snap => {
+    if (!snap.exists()){
+      state.cheeseGone = false;
+      state.lastCheeseGoneId = null;
+      clearCheeseLine();
+      updateCheeseUI();
+      return;
+    }
+
+    const ev = snap.val();
+    const id = ev?.id || null;
+
+    if (id && state.lastCheeseGoneId === id) return;
+
+    state.lastCheeseGoneId = id;
+    state.cheeseGone = true;
+    updateCheeseUI();
+  });
+}
+
+function shouldShowCheeseLineForMe(){
+  if (!state.gameStarted) return false;
+  if (!isAfterBrightNow()) return false;
+  if (!state.cheeseGone) return false;
+
+  const dorobooId = findDorobooId();
+  if (!dorobooId) return false;
+  if (dorobooId === state.userId) return false;
+
+  const dorobooV = getDieValueOf(dorobooId);
+  const myV      = getDieValueOf(state.userId);
+  if (dorobooV == null || myV == null) return false;
+
+  return myV === dorobooV;
+}
+function clearCheeseLine(){
+  const svg = document.getElementById('cheeseLineSvg');
+  if (!svg) return;
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+}
+function drawCheeseLine(){
+  clearCheeseLine();
+
+  const svg = document.getElementById('cheeseLineSvg');
+  if (!svg) return;
+
+  const dorobooId = findDorobooId();
+  if (!dorobooId) return;
+
+  const tagEl = document.querySelector(`.player-tag[data-pid="${dorobooId}"]`);
+  if (!tagEl) return;
+
+  const circleRect = playerCircle.getBoundingClientRect();
+  const tagRect = tagEl.getBoundingClientRect();
+
+  const x1 = (tagRect.left + tagRect.width/2) - circleRect.left;
+  const y1 = (tagRect.top  + tagRect.height/2) - circleRect.top;
+
+  const x2 = circleRect.width / 2;
+  const y2 = circleRect.height / 2 + 25;
+
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+  const H = 22;
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('transform', `translate(${x1},${y1}) rotate(${angle})`);
+
+  const img = document.createElementNS('http://www.w3.org/2000/svg','image');
+  img.setAttribute('href', 'ashiato.png');
+  img.setAttributeNS('http://www.w3.org/1999/xlink', 'href', 'ashiato.png');
+
+  img.setAttribute('x', '0');
+  img.setAttribute('y', String(-H/2));
+  img.setAttribute('width', String(len));
+  img.setAttribute('height', String(H));
+  img.setAttribute('preserveAspectRatio', 'none');
+
+  g.appendChild(img);
+  svg.appendChild(g);
+}
+
+/* =========================
+   🧀 チーズ泥棒：Follower選択（7/8人は2人選択）
+   ========================= */
+function getCheeseFollowNeedCount(playerCount){
+  return (playerCount === 7 || playerCount === 8) ? 2 : 1;
+}
+function getPickedFollowerIds(){
+  const ev = state.cheeseFollow;
+  if (!ev) return [];
+  let arr = [];
+  if (Array.isArray(ev.followerIds)) arr = ev.followerIds.filter(Boolean);
+  else if (ev.followerId) arr = [ev.followerId];
+  return Array.from(new Set(arr));
+}
+function getCardImgForPid(pid){
+  return state.hands?.[pid]?.cards?.[0]?.img || 'cheesecard.jpg';
+}
+function getCheeseFollowerCandidates(){
+  if (!state.gameStarted) return [];
+  if (!isAfterBrightNow()) return [];
+  if (!state.cheeseGone) return [];
+  if (getMyRoleKey() !== 'doroboo') return [];
+
+  const n = latestPlayers.length;
+  const need = getCheeseFollowNeedCount(n);
+  const pickedSet = new Set(getPickedFollowerIds());
+  if (pickedSet.size >= need) return [];
+
+  if (n === 7 || n === 8 || n === 6){
+    return latestPlayers
+      .filter(p => p?.id && p.id !== state.userId && !pickedSet.has(p.id))
+      .map(p => p.id);
+  }
+
+  if (n === 4 || n === 5){
+    const myV = getDieValueOf(state.userId);
+    if (myV == null) return [];
+
+    for (const p of latestPlayers){
+      if (!p?.id) continue;
+      if (getDieValueOf(p.id) == null) return [];
+    }
+
+    return latestPlayers
+      .filter(p => p?.id && p.id !== state.userId)
+      .filter(p => getDieValueOf(p.id) === myV)
+      .filter(p => !pickedSet.has(p.id))
+      .map(p => p.id);
+  }
+
+  return [];
+}
+function shouldShowCheeseFollowerPop(){
+  return getCheeseFollowerCandidates().length >= 1;
+}
+function updateCheeseFollowerPop(){
+  if (!cheeseFollowerPop) return;
+
+  const iAmDoroboo = (getMyRoleKey() === 'doroboo');
+
+  if (!iAmDoroboo){
+    cheeseFollowerPop.classList.add('hidden');
+    document.querySelectorAll('.player-tag[data-pid]').forEach(tag=>{
+      tag.classList.remove('follower-pickable', 'follower-picked');
+    });
+    updateCheesePop();
+    updateNeboPop();
+    updateVotePop();
+    return;
+  }
+
+  const n = latestPlayers.length;
+  const need = getCheeseFollowNeedCount(n);
+  const picked = getPickedFollowerIds();
+  const remain = Math.max(0, need - picked.length);
+
+  const show = shouldShowCheeseFollowerPop();
+  cheeseFollowerPop.classList.toggle('hidden', !show);
+
+  if (show){
+    if (need === 2){
+      cheeseFollowerPop.textContent = `フォロワーを二人選ぶ（残り${remain}人）　ネームタグをクリック`;
+    } else {
+      cheeseFollowerPop.textContent = `フォロワーを一人選ぶ　ネームタグをクリック`;
+    }
+  }
+
+  updateCheesePop();
+  updateNeboPop();
+  updateVotePop();
+
+  const cand = new Set(getCheeseFollowerCandidates());
+  const pickedSet = new Set(picked);
+
+  document.querySelectorAll('.player-tag[data-pid]').forEach(tag=>{
+    const pid = tag.dataset.pid;
+    tag.classList.toggle('follower-pickable', cand.has(pid));
+    tag.classList.toggle('follower-picked', pickedSet.has(pid));
+  });
+}
+function canSelectCheeseFollowerOn(targetPid){
+  if (!targetPid) return false;
+  if (targetPid === state.userId) return false;
+  if (!shouldShowCheeseFollowerPop()) return false;
+  const cand = getCheeseFollowerCandidates();
+  return cand.includes(targetPid);
+}
+async function selectCheeseFollower(targetPid){
+  if (!canSelectCheeseFollowerOn(targetPid)) return;
+
+  const dorobooId = state.userId;
+  const roundId = currentRoundId();
+  const playerCount = latestPlayers.length;
+  const need = getCheeseFollowNeedCount(playerCount);
+
+  const revealDorobooToFollowers = (playerCount !== 7);
+
+  const tx = await runTransaction(cheeseFollowRef(), (cur) => {
+    const prev = cur || {};
+
+    const fixedDoroboo = prev.dorobooId || dorobooId;
+    if (fixedDoroboo !== dorobooId) return prev;
+
+    let ids = [];
+    if (Array.isArray(prev.followerIds)) ids = prev.followerIds.filter(Boolean);
+    else if (prev.followerId) ids = [prev.followerId];
+    ids = Array.from(new Set(ids));
+
+    if (ids.includes(targetPid)) return prev;
+    if (ids.length >= need) return prev;
+
+    ids.push(targetPid);
+
+    return {
+      id: prev.id || crypto.randomUUID(),
+      at: prev.at || Date.now(),
+      roundId: prev.roundId || roundId,
+      dorobooId: fixedDoroboo,
+      followerIds: ids,
+      playerCount,
+      need,
+      revealDorobooToFollowers
+    };
+  });
+
+  if (!tx.committed) return;
+
+  updateCheeseFollowerPop();
+  applyCheeseFollowRevealForViewer();
+}
+function applyCheeseFollowRevealForViewer(){
+  if (state.voteResult?.id){
+    revealAllIdentityCards();                 // 全員の正体カードを表に固定
+    //（任意：票数も安定させたいなら）
+    if (state.voteResult?.counts) setVoteCounts(state.voteResult.counts);
+    return;
+  }
+
+  document.querySelectorAll('.mini-card').forEach(el=>{
+    el.classList.remove('red-tint');
+    el.style.backgroundImage = `url('cheesecard.jpg')`;
+  });
+  const myCard = document.querySelector('#myHand .my-card');
+  if (myCard) myCard.classList.remove('red-tint');
+
+  const ev = state.cheeseFollow;
+  if (!ev || !ev.dorobooId) return;
+
+  const dorobooId = ev.dorobooId;
+  const n = Number(ev.playerCount || latestPlayers.length);
+  const need = getCheeseFollowNeedCount(n);
+
+  const fids = getPickedFollowerIds();
+  if (fids.length < need) return;
+
+  const revealDorobooToFollowers = (ev.revealDorobooToFollowers ?? (n !== 7));
+  const viewer = state.userId;
+
+  const revealTag = (pid) => {
+    const mini = document.querySelector(`.player-tag[data-pid="${pid}"] .mini-card`);
+    if (!mini) return;
+    mini.style.backgroundImage = `url('${getCardImgForPid(pid)}')`;
+  if (pid !== dorobooId) mini.classList.add('red-tint');
+};
+
+  if (need === 1){
+    const followerId = fids[0];
+    const isDorobooViewer = (viewer === dorobooId);
+    const isFollowerViewer = (viewer === followerId);
+    if (!isDorobooViewer && !isFollowerViewer) return;
+
+if (myCard && isFollowerViewer) myCard.classList.add('red-tint');
+
+    const targetToReveal = isDorobooViewer ? followerId : dorobooId;
+    revealTag(targetToReveal);
+    return;
+  }
+
+  const isFollowerViewer = fids.includes(viewer);
+  const isDorobooViewer  = (viewer === dorobooId);
+
+  if (isFollowerViewer){
+    if (myCard) myCard.classList.add('red-tint');
+
+    const otherFollower = fids.find(id => id !== viewer);
+    if (otherFollower) revealTag(otherFollower);
+
+    if (revealDorobooToFollowers){
+      revealTag(dorobooId);
+    }
+    return;
+  }
+
+  if (isDorobooViewer){
+    for (const fid of fids){
+      revealTag(fid);
+    }
+    return;
+  }
+}
+function subscribeCheeseFollow(){
+  const r = cheeseFollowRef();
+  onValue(r, snap => {
+    state.cheeseFollow = snap.val() || null;
+    updateCheeseFollowerPop();
+    applyCheeseFollowRevealForViewer();
+  });
+}
+
+/* =========================
+   updateCheeseUI
+   ========================= */
+function updateCheeseUI(){
+  const btn = document.getElementById('cheeseBtn');
+  if (btn){
+    if (state.cheeseGone) btn.classList.add('hidden');
+    else btn.classList.remove('hidden');
+
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = canClickCheeseNow() ? 'auto' : 'none';
+    btn.style.cursor = canClickCheeseNow() ? 'pointer' : 'default';
+  }
+
+  if (shouldShowCheeseLineForMe()){
+    drawCheeseLine();
+  } else {
+    clearCheeseLine();
+  }
+
+  updateCheeseFollowerPop();
+  updateNeboPop();
+  updateCheesePop();
+  updateVotePop();
+  applyCheeseFollowRevealForViewer();
+
+  updateTalkTimerUI();
+}
+
+/* =========================
+   暗転同期
+   ========================= */
+function firstCupDoneRefFor(pid){
+  return ref(db, `rooms/${state.roomCode}/events/firstCupDone/${pid}`);
+}
+async function markFirstCupDoneOnce(){
+  if (!state.roomCode || !state.userId) return;
+  if (state.firstCupDone) return;
+  state.firstCupDone = true;
+  await set(firstCupDoneRefFor(state.userId), true);
+}
+function subscribeBlackoutDone(){
+  const doneRef = ref(db, `rooms/${state.roomCode}/events/blackoutDone`);
+  onValue(doneRef, snap => {
+    state.blackoutDoneMap = snap.val() || {};
+    state.blackoutDoneLoaded = true;
+    updateCheeseUI();
+    requestNeboPeekSync();
+  });
+}
+
+const BLACKOUT_PRE_MS = 3000;
+const BLACKOUT_FADE_MS = 1200;
+const BLACKOUT_DARK_HOLD_MS = 3000;
+const BLACKOUT_TOTAL_MS = BLACKOUT_PRE_MS + (BLACKOUT_DARK_HOLD_MS + BLACKOUT_FADE_MS);
+
+let blackoutTimers = [];
+function clearBlackoutTimers(){
+  blackoutTimers.forEach(t => clearTimeout(t));
+  blackoutTimers = [];
+}
+
+function isAfterBrightNow(){
+  const rid = currentRoundId();
+  const mine = state.blackoutDoneMap?.[state.userId];
+  if (mine && mine.roundId === rid) return true;
+
+  const at = Number(state.room?.events?.blackout?.at);
+  if (Number.isFinite(at)){
+    const elapsed = Date.now() - at;
+    if (elapsed >= BLACKOUT_TOTAL_MS) return true;
+  }
+  return !!state.afterBright;
+}
+
+async function markBlackoutDone(){
+  if (!state.roomCode || !state.userId) return;
+  const rid = currentRoundId();
+  await set(ref(db, `rooms/${state.roomCode}/events/blackoutDone/${state.userId}`), {
+    roundId: rid,
+    at: Date.now()
+  });
+}
+
+async function setBrightFinalState(){
+  const el = document.getElementById('blackout');
+  if (el) el.classList.remove('on');
+
+  clearSameDiceCup3Local();
+  state.afterBright = true;
+
+  markBlackoutDone().catch(()=>{});
+
+  updateCheeseUI();
+  requestNeboPeekSync();
+
+  if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+}
+
+function enterDarkState(){
+  const el = document.getElementById('blackout');
+  if (!el) return;
+  el.classList.add('on');
+
+  scheduleRecalcSameDiceCup3();
+}
+
+async function leaveDarkState(){
+  const el = document.getElementById('blackout');
+  if (!el) return;
+  el.classList.remove('on');
+
+  state.afterBright = true;
+
+  markBlackoutDone().catch(()=>{});
+
+  updateCheeseUI();
+  requestNeboPeekSync();
+
+  if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+}
+
+function playBlackoutSequenceSynced(eventAt){
+  const el = document.getElementById('blackout');
+  if (!el) return;
+
+  clearBlackoutTimers();
+
+  el.classList.remove('on');
+  clearSameDiceCup3Local();
+
+  state.afterBright = false;
+
+  updateCheeseUI();
+
+  const now = Date.now();
+  let elapsed = now - Number(eventAt || now);
+  if (!Number.isFinite(elapsed)) elapsed = 0;
+  if (elapsed < 0) elapsed = 0;
+
+  if (elapsed >= BLACKOUT_TOTAL_MS){
+    setBrightFinalState().catch(()=>{});
+    return;
+  }
+
+  const darkStartT = BLACKOUT_PRE_MS;
+  const cup3ApplyT = BLACKOUT_PRE_MS + 1300;
+  const brightT    = BLACKOUT_TOTAL_MS;
+
+  if (elapsed < darkStartT){
+    el.classList.remove('on');
+
+    const waitToDark = darkStartT - elapsed;
+    blackoutTimers.push(setTimeout(() => {
+      enterDarkState();
+
+      playCheeseSoundNow();
+
+      blackoutTimers.push(setTimeout(() => {
+        applySameDiceCup3Local();
+      }, 1300));
+
+      blackoutTimers.push(setTimeout(() => {
+        leaveDarkState().catch(()=>{});
+      }, BLACKOUT_DARK_HOLD_MS + BLACKOUT_FADE_MS));
+
+    }, waitToDark));
+
+    return;
+  }
+
+  enterDarkState();
+
+  if (elapsed >= cup3ApplyT){
+    applySameDiceCup3Local();
+  } else {
+    blackoutTimers.push(setTimeout(() => {
+      applySameDiceCup3Local();
+    }, cup3ApplyT - elapsed));
+  }
+
+  blackoutTimers.push(setTimeout(() => {
+    leaveDarkState().catch(()=>{});
+  }, brightT - elapsed));
+}
+
+function subscribeBlackout(){
+  const blackoutRef = ref(db, `rooms/${state.roomCode}/events/blackout`);
+  onValue(blackoutRef, snap => {
+    const ev = snap.val();
+    if (!ev || !ev.id) return;
+
+    if (state.lastBlackoutId === ev.id) return;
+    state.lastBlackoutId = ev.id;
+    state.currentBlackoutId = ev.id;
+
+    playBlackoutSequenceSynced(ev.at);
+  });
+}
+
+async function maybeFireBlackoutAsHost(){
+  if (!state.isHost || !state.roomCode) return;
+  if (!latestPlayers?.length) return;
+
+  const doneSnap = await get(ref(db, `rooms/${state.roomCode}/events/firstCupDone`));
+  const doneMap = doneSnap.val() || {};
+
+  const allDone = latestPlayers.every(p => !!doneMap[p.id]);
+  if (!allDone) return;
+
+  const blackoutRef = ref(db, `rooms/${state.roomCode}/events/blackout`);
+  const bSnap = await get(blackoutRef);
+  if (bSnap.exists()) return;
+
+  await set(blackoutRef, { id: crypto.randomUUID(), at: Date.now() });
+}
+
+function subscribeFirstCupDone(){
+  const doneRef = ref(db, `rooms/${state.roomCode}/events/firstCupDone`);
+  onValue(doneRef, () => {
+    maybeFireBlackoutAsHost().catch(()=>{});
+  });
+}
+
+/* =========================
+   cups同期
+   ========================= */
+async function setCupStateForPlayer(pid, next){
+  if (!state.roomCode || !pid) return;
+  await set(cupRefFor(pid), next);
+  await logCupMove(pid, next);
+}
+function defaultCupState(){
+  return {
+    covered:false,
+    lifted:false,
+    transform:'translate(0px, 0px) rotate(0deg)',
+    updatedAt: Date.now()
+  };
+}
+function applyCupStateToEl(cupEl, cupState){
+  const LIFT_Y = -15;
+  const covered = !!cupState?.covered;
+  const lifted  = !!cupState?.lifted;
+  const base    = cupState?.transform || 'translate(0px, 0px) rotate(0deg)';
+
+  if (!covered){
+    cupEl.src = 'cup.png';
+    cupEl.classList.remove('is-covered','behind-die','is-animating');
+    cupEl.style.transform = 'translate(0px, 0px) rotate(0deg)';
+    return;
+  }
+
+  cupEl.classList.add('is-covered');
+  if (lifted){
+    cupEl.src = 'cup3.png';
+    cupEl.classList.add('behind-die');
+    cupEl.style.transform = `${base} translateY(${LIFT_Y}px)`;
+  } else {
+    cupEl.src = 'cup.png';
+    cupEl.classList.remove('behind-die');
+    cupEl.style.transform = base;
+  }
+}
+
+/* =========================
+   左右ゆらし
+   ========================= */
+function shakeCup(cupEl, baseTransform){
+  const shake = cupEl.animate(
+    [
+      { transform: `${baseTransform} translateX(0px)` },
+      { transform: `${baseTransform} translateX(-6px)` },
+      { transform: `${baseTransform} translateX(6px)` },
+      { transform: `${baseTransform} translateX(-4px)` },
+      { transform: `${baseTransform} translateX(4px)` },
+      { transform: `${baseTransform} translateX(0px)` }
+    ],
+    { duration: 420, easing: 'ease-in-out', fill: 'forwards' }
+  );
+  shake.onfinish = () => { cupEl.style.transform = baseTransform; };
+  return shake;
+}
+
+/* =========================
+   ミニDOM参照＆アニメ
+   ========================= */
+function parseTranslateFromTransform(t){
+  const m = /translate\(\s*([-\d.]+)px,\s*([-\d.]+)px\)/.exec(t || '');
+  return { x: m ? Number(m[1]) : 0, y: m ? Number(m[2]) : 0 };
+}
+function syncDieDom(pid){
+  const dieEl = getDieElFor(pid);
+  if (!dieEl) return;
+  const d = state.dice?.[pid] || { value: 1 };
+  applyDieStateToEl(dieEl, d);
+  updateCheeseUI();
+  requestNeboPeekSync();
+}
+
+function animateCupToState(cupEl, pid, prev, next){
+  if (!cupEl) return;
+
+  if (applyMyPeekOverrideToEl(pid, cupEl)) return;
+
+  try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+
+  const LIFT_Y  = -15;
+  const LIFT_MS = 180;
+
+  const prevCovered = !!prev?.covered;
+  const nextCovered = !!next?.covered;
+  const prevLifted  = !!prev?.lifted;
+  const nextLifted  = !!next?.lifted;
+
+  const base = next?.transform || 'translate(0px, 0px) rotate(0deg)';
+
+  if (!prevCovered && nextCovered){
+    cupEl.src = 'cup.png';
+    cupEl.classList.remove('is-animating','is-covered','behind-die');
+    cupEl.style.transform = 'translate(0px, 0px) rotate(0deg)';
+
+    const { x, y } = parseTranslateFromTransform(base);
+    const midX = x + 18;
+    const midY = y - 55;
+
+    cupEl.classList.add('is-animating','is-covered');
+
+    const a = cupEl.animate(
+      [
+        { transform: 'translate(0px, 0px) rotate(0deg)' },
+        { transform: `translate(${midX.toFixed(1)}px, ${midY.toFixed(1)}px) rotate(0deg)` },
+        { transform: base }
+      ],
+      { duration: 600, easing: 'linear', fill: 'forwards' }
+    );
+
+    a.onfinish = () => {
+      cupEl.classList.remove('is-animating');
+      cupEl.style.transform = base;
+
+      const shake = shakeCup(cupEl, base);
+      shake.finished.then(()=>{}).catch(()=>{});
+
+      applyCupStateToEl(cupEl, next);
+      syncCupZForMini(pid, cupEl);
+
+      applyMyPeekOverrideToEl(pid, cupEl);
+    };
+
+    a.oncancel = () => {
+      cupEl.classList.remove('is-animating');
+      applyCupStateToEl(cupEl, next);
+      syncCupZForMini(pid, cupEl);
+      applyMyPeekOverrideToEl(pid, cupEl);
+    };
+    return;
+  }
+
+  if (nextCovered && prevCovered && prevLifted !== nextLifted){
+    const from = prevLifted ? `${base} translateY(${LIFT_Y}px)` : base;
+    const to   = nextLifted ? `${base} translateY(${LIFT_Y}px)` : base;
+
+    if (nextLifted){
+      cupEl.src = 'cup.png';
+      cupEl.classList.remove('behind-die');
+    } else {
+      cupEl.src = 'cup3.png';
+      cupEl.classList.add('behind-die');
+    }
+
+    cupEl.classList.add('is-animating','is-covered');
+
+    const a = cupEl.animate(
+      [{ transform: from }, { transform: to }],
+      { duration: LIFT_MS, easing: 'linear', fill: 'forwards' }
+    );
+
+    const t1 = Math.round(LIFT_MS / 3);
+    const t2 = Math.round((LIFT_MS * 2) / 3);
+
+    if (cupEl._imgTimers){
+      cupEl._imgTimers.forEach(t => clearTimeout(t));
+      cupEl._imgTimers = null;
+    }
+    const timers = [];
+    if (nextLifted){
+      timers.push(setTimeout(()=>{ cupEl.src='cup2.png'; cupEl.classList.remove('behind-die'); }, t1));
+      timers.push(setTimeout(()=>{ cupEl.src='cup3.png'; cupEl.classList.add('behind-die'); }, t2));
+    } else {
+      timers.push(setTimeout(()=>{ cupEl.src='cup2.png'; cupEl.classList.remove('behind-die'); }, t1));
+      timers.push(setTimeout(()=>{ cupEl.src='cup.png';  cupEl.classList.remove('behind-die'); }, t2));
+    }
+    cupEl._imgTimers = timers;
+
+    a.onfinish = () => {
+      cupEl.classList.remove('is-animating');
+      cupEl.style.transform = to;
+      applyCupStateToEl(cupEl, next);
+      syncCupZForMini(pid, cupEl);
+      if (cupEl._imgTimers){
+        cupEl._imgTimers.forEach(t => clearTimeout(t));
+        cupEl._imgTimers = null;
+      }
+      applyMyPeekOverrideToEl(pid, cupEl);
+    };
+    a.oncancel = () => {
+      cupEl.classList.remove('is-animating');
+      applyCupStateToEl(cupEl, next);
+      syncCupZForMini(pid, cupEl);
+      if (cupEl._imgTimers){
+        cupEl._imgTimers.forEach(t => clearTimeout(t));
+        cupEl._imgTimers = null;
+      }
+      applyMyPeekOverrideToEl(pid, cupEl);
+    };
+    return;
+  }
+
+  applyCupStateToEl(cupEl, next);
+  syncCupZForMini(pid, cupEl);
+  applyMyPeekOverrideToEl(pid, cupEl);
+}
+
+/* =========================
+   カップDOMだけを安全にリセット
+   ========================= */
+function resetMyCupDomOnly(){
+  const cupEl = document.querySelector('#myHand .cup-img');
+  if (!cupEl) return;
+
+  if (cupEl._imgTimers){
+    cupEl._imgTimers.forEach(t => clearTimeout(t));
+    cupEl._imgTimers = null;
+  }
+  try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+
+  cupEl.classList.remove('is-animating','is-covered','behind-die');
+  cupEl.src = 'cup.png';
+  cupEl.style.transform = 'translate(0px, 0px) rotate(0deg)';
+}
+
+function hardResetCupEl(cupEl, cupState){
+  if (!cupEl) return;
+  if (cupEl._imgTimers){
+    cupEl._imgTimers.forEach(t => clearTimeout(t));
+    cupEl._imgTimers = null;
+  }
+  try { cupEl.getAnimations().forEach(a => a.cancel()); } catch {}
+  cupEl.classList.remove('is-animating');
+
+  applyCupStateToEl(cupEl, cupState || defaultCupState());
+  const pid = cupEl.dataset.pid;
+  if (pid) applyMyPeekOverrideToEl(pid, cupEl);
+}
+
+function hardResetAllCupAndDiceDom(){
+  document.getElementById('blackout')?.classList.remove('on');
+  clearSameDiceCup3Local();
+
+  state.afterBright = false;
+
+  updateCheeseUI();
+
+  state.cupState.covered = false;
+  state.cupState.lifted = false;
+  state.cupState.transform = 'translate(0px, 0px) rotate(0deg)';
+
+  const cups = document.querySelectorAll('img.cup-img');
+  cups.forEach(cupEl => {
+    const pid = cupEl.dataset.pid;
+    const cs = state.cups?.[pid] || defaultCupState();
+    hardResetCupEl(cupEl, cs);
+    if (pid) syncCupZForMini(pid, cupEl);
+  });
+
+  const diceEls = document.querySelectorAll('.die[data-pid]');
+  diceEls.forEach(dieEl => {
+    const pid = dieEl.dataset.pid;
+    const ds = state.dice?.[pid] || { value: 1 };
+    applyDieStateToEl(dieEl, ds);
+  });
+
+  // 投票UIもリセット
+  clearVoteMarks();
+  updateVotePop();
+  if (winnerBackdropEl) winnerBackdropEl.classList.add('hidden');
+
+  requestNeboPeekSync();
+  updateTalkTimerUI();
+}
+
+/* =========================
+   startReset購読
+   ========================= */
+function subscribeStartReset(){
+  const srRef = ref(db, `rooms/${state.roomCode}/events/startReset`);
+  onValue(srRef, snap => {
+    const ev = snap.val();
+    if (!ev || !ev.id) return;
+
+    const at = Number(ev.at);
+    if (Number.isFinite(at) && state.listenStartAt && at < (state.listenStartAt - 800)){
+      state.lastStartResetId = ev.id;
+      return;
+    }
+
+    if (state.lastStartResetId === ev.id) return;
+    state.lastStartResetId = ev.id;
+
+    hardResetAllCupAndDiceDom();
+
+    clearCheeseLine();
+    updateCheeseUI();
+
+    state.firstCupDone = false;
+    state.lastBlackoutId = null;
+    state.currentBlackoutId = null;
+
+    state.pendingBlackoutEv = null;
+  });
+}
+
+/* =========================
+   自分のカップクリック
+   ========================= */
+function attachCupAnimation(cupEl, dieEl){
+  const LIFT_Y   = -15;
+  const LIFT_MS  = 180;
+
+  function getCovered(){ return !!state.cupState.covered; }
+  function getLifted(){ return !!state.cupState.lifted; }
+  function getBase(){ return state.cupState.transform || 'translate(0px, 0px) rotate(0deg)'; }
+
+  function clearImgTimers(){
+    if (cupEl._imgTimers){
+      cupEl._imgTimers.forEach(t => clearTimeout(t));
+      cupEl._imgTimers = null;
+    }
+  }
+
+  (function initFromState(){
+    const cs = state.cups?.[state.userId] || state.cupState;
+    applyCupStateToEl(cupEl, cs);
+
+    state.cupState.covered = !!cs?.covered;
+    state.cupState.lifted  = !!cs?.lifted;
+    state.cupState.transform = cs?.transform || 'translate(0px, 0px) rotate(0deg)';
+  })();
+
+  function toggleLift(){
+    if (!getCovered()) return;
+    if (cupEl.classList.contains('is-animating')) return;
+
+    const base = getBase();
+    const lifted = getLifted();
+    const goingUp = !lifted;
+
+    const from = goingUp ? base : `${base} translateY(${LIFT_Y}px)`;
+    const to   = goingUp ? `${base} translateY(${LIFT_Y}px)` : base;
+
+    clearImgTimers();
+
+    if (goingUp){
+      cupEl.src = 'cup.png';
+      cupEl.classList.remove('behind-die');
+    } else {
+      cupEl.src = 'cup3.png';
+      cupEl.classList.add('behind-die');
+    }
+
+    cupEl.classList.add('is-animating');
+
+    const a = cupEl.animate(
+      [{ transform: from }, { transform: to }],
+      { duration: LIFT_MS, easing: 'linear', fill: 'forwards' }
+    );
+
+    const t1 = Math.round(LIFT_MS / 3);
+    const t2 = Math.round((LIFT_MS * 2) / 3);
+
+    const timers = [];
+    if (goingUp){
+      timers.push(setTimeout(() => {
+        cupEl.src = 'cup2.png';
+        cupEl.classList.remove('behind-die');
+      }, t1));
+      timers.push(setTimeout(() => {
+        cupEl.src = 'cup3.png';
+        cupEl.classList.add('behind-die');
+      }, t2));
+    } else {
+      timers.push(setTimeout(() => {
+        cupEl.src = 'cup2.png';
+        cupEl.classList.remove('behind-die');
+      }, t1));
+      timers.push(setTimeout(() => {
+        cupEl.src = 'cup.png';
+        cupEl.classList.remove('behind-die');
+      }, t2));
+    }
+    cupEl._imgTimers = timers;
+
+    a.onfinish = () => {
+      cupEl.classList.remove('is-animating');
+      cupEl.style.transform = to;
+
+      state.cupState.lifted = !lifted;
+
+      if (state.cupState.lifted){
+        cupEl.src = 'cup3.png';
+        cupEl.classList.add('behind-die');
+      } else {
+        cupEl.src = 'cup.png';
+        cupEl.classList.remove('behind-die');
+      }
+      clearImgTimers();
+    };
+
+    a.oncancel = () => {
+      cupEl.classList.remove('is-animating');
+      clearImgTimers();
+
+      cupEl.style.transform = to;
+
+      const nextLocal = { covered:true, lifted: goingUp, transform: base };
+      applyCupStateToEl(cupEl, nextLocal);
+      syncCupZForMini(state.userId, cupEl);
+    };
+  }
+
+  cupEl.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (cupEl.classList.contains('is-animating')) return;
+
+    if (getCovered()){
+      toggleLift();
+      return;
+    }
+
+    const dieW = dieEl.offsetWidth;
+    const cupW = cupEl.offsetWidth;
+    const cupH = cupEl.offsetHeight;
+
+    const cupLeft0 = cupEl.offsetLeft;
+
+    const dieLeft0 = dieEl.offsetLeft;
+    const dieTop0  = dieEl.offsetTop;
+
+    const dieCx = dieLeft0 + dieW / 2;
+    const targetCupLeft = dieCx - cupW / 2;
+
+    const coverLift = cupH * 0.18;
+    const targetCupTop = dieTop0 - coverLift;
+
+    const targetX = (targetCupLeft - cupLeft0);
+    const targetY = (targetCupTop - targetCupTop);
+
+    const midX = targetX + 18;
+    const midY = targetY - 55;
+
+    const endTransform = `translate(${targetX.toFixed(1)}px, ${targetY.toFixed(1)}px) rotate(0deg)`;
+
+    cupEl.classList.add('is-animating','is-covered');
+    cupEl.classList.remove('behind-die');
+    cupEl.src = 'cup.png';
+
+    const anim = cupEl.animate(
+      [
+        { transform: 'translate(0px, 0px) rotate(0deg)' },
+        { transform: `translate(${midX.toFixed(1)}px, ${midY.toFixed(1)}px) rotate(0deg)` },
+        { transform: endTransform }
+      ],
+      { duration: 600, easing: 'linear', fill: 'forwards' }
+    );
+
+    anim.onfinish = () => {
+      cupEl.classList.remove('is-animating');
+      cupEl.style.transform = endTransform;
+
+      state.cupState.covered = true;
+      state.cupState.transform = endTransform;
+      state.cupState.lifted = false;
+
+      if (state.roomCode && state.userId){
+        setCupStateForPlayer(state.userId, {
+          covered: true,
+          lifted: false,
+          transform: endTransform,
+          updatedAt: Date.now()
+        });
+      }
+
+      const v = randomDieValue();
+      setDieFace(dieEl, v);
+
+      const shake = shakeCup(cupEl, endTransform);
+
+      shake.finished.then(async () => {
+        if (state.roomCode && state.userId){
+          await set(diceRefFor(state.userId), { value: v });
+          await logDiceChange(state.userId, v);
+        }
+        await markFirstCupDoneOnce();
+        toggleLift();
+        requestNeboPeekSync();
+      }).catch(()=>{});
+    };
+  });
+}
+
+/* ===== 座席復元 ===== */
+async function restoreSeatFromDB(){
+  if (!state.roomCode) return;
+  const tablesRef = ref(db, `rooms/${state.roomCode}/tables`);
+  const snap = await get(tablesRef);
+  const data = snap.val() || {};
+  let mySeatIndex = null;
+
+  for (const [seatIndex, t] of Object.entries(data)) {
+    if (t && t.playerId === state.userId) {
+      mySeatIndex = Number(seatIndex);
+      break;
+    }
+  }
+  if (mySeatIndex !== null) state.seatedTable = mySeatIndex;
+}
+
+function refreshRoomLabels(){
+  if (!state.roomCode || !state.userName) return;
+  const label = state.isHost ? '（ホスト）' : '';
+  const infoText = ` ${state.roomCode},  ${state.userName}${label}`;
+  roomInfo.textContent = infoText;
+  roomInfoLobby.textContent = infoText;
+}
+function updateHostUI(){
+  refreshRoomLabels();
+  if (state.isHost){
+    hostSettingsBtn.classList.add('visible');
+  } else {
+    hostSettingsBtn.classList.remove('visible');
+    startPop.classList.add('hidden');
+  }
+  helpBtn.classList.add('visible');
+
+  updateTalkTimerUI();
+}
+
+/* ===== ヘルプ ===== */
+function getHelpList(){
+  const nezumiOn = !!state.roleFlags.nezumiRevealed;
+  const nezumiOpacity = nezumiOn ? 1 : 0.3;
+
+  return [
+    { key:'doroboo', name:'チーズ泥棒', img:ROLE_IMG.doroboo, opacity:1, clickable:false, text:'スタート時に必ず1人だけに配られる。' },
+    { key:'nebosuke', name:'ねぼすけ', img:ROLE_IMG.nebosuke, opacity:1, clickable:false, text:'チーズ泥棒・ねずみ以外の全員に配られる。' },
+    {
+      key:'nezumi', name:'ねずみ', img:ROLE_IMG.nezumi, opacity:nezumiOpacity, clickable:state.isHost,
+      text:
+`初期は薄表示（30%）。
+ホストが一覧でクリックすると ON/OFF を切替できる。
+ON のとき：全員100%表示 ＆ スタートでねずみが1人に配られる。
+OFF のとき：30%表示 ＆ スタートで配られない。`
+    }
+  ];
+}
+async function toggleNezumi(){
+  if (!state.isHost || !state.roomCode) return;
+  const next = !state.roleFlags.nezumiRevealed;
+  await update(ref(db, `rooms/${state.roomCode}/roleFlags`), { nezumiRevealed: next });
+}
+function renderHelpList(){
+  helpBody.innerHTML = '';
+  const list = getHelpList();
+
+  list.forEach((r) => {
+    const row = document.createElement('div');
+    row.className = 'role-row';
+
+    const card = document.createElement('div');
+    card.className = 'role-card' + (r.clickable ? ' clickable' : '');
+    card.style.backgroundImage = `url('${r.img}')`;
+    card.style.opacity = String(r.opacity);
+
+    if (r.key === 'nezumi' && r.clickable){
+      const isOn = !!state.roleFlags.nezumiRevealed;
+      card.title = isOn ? 'クリックでOFF（配らない＆30%表示）' : 'クリックでON（配布あり＆100%表示）';
+      card.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        await toggleNezumi();
+        renderHelpList();
+      });
+    }
+
+    const desc = document.createElement('div');
+    desc.className = 'role-desc';
+    desc.innerHTML = `<div class="name">${r.name}</div><div class="text">${r.text}</div>`;
+
+    row.appendChild(card);
+    row.appendChild(desc);
+    helpBody.appendChild(row);
+  });
+}
+function openHelp(){ renderHelpList(); helpBackdrop.classList.remove('hidden'); }
+function closeHelp(){ helpBackdrop.classList.add('hidden'); }
+helpBtn.addEventListener('click', () => { if (joinBox.classList.contains('hidden')) openHelp(); });
+btnHelpClose.addEventListener('click', closeHelp);
+helpBackdrop.addEventListener('click', (e) => { if (e.target === helpBackdrop) closeHelp(); });
+
+/* ===== 購読 ===== */
+function subscribeRoom(){
+  const roomRef = ref(db, `rooms/${state.roomCode}`);
+  onValue(roomRef, snap => {
+    state.room = snap.val() || {};
+    state.roomLoaded = true;
+
+    const b = state.room?.events?.blackout;
+    if (b?.id){
+      state.lastBlackoutId = b.id;
+      state.currentBlackoutId = b.id;
+    }
+
+    const nextStarted = !!state.room.startedAt;
+    const changed = (state.gameStarted !== nextStarted);
+    state.gameStarted = nextStarted;
+
+    const waiting = (!state.isHost && !state.room.maxPlayers);
+    hostSelectingPop.classList.toggle('hidden', !waiting);
+    syncSeatUI();
+
+    if (changed && latestPlayers.length){
+      renderPlayerCircle(latestPlayers);
+      renderHands();
+    }
+
+    updateCheeseUI();
+    requestNeboPeekSync();
+
+    if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+
+    updateTalkTimerUI();
+  });
+}
+function subscribeHostState(){
+  const hostRef = ref(db, `rooms/${state.roomCode}/hostId`);
+  onValue(hostRef, snap => {
+    const hostId = snap.val();
+    state.isHost = (hostId === state.userId);
+    updateHostUI();
+    syncSeatUI();
+    if (!helpBackdrop.classList.contains('hidden')) renderHelpList();
+  });
+}
+function subscribeRoleFlags(){
+  const rf = ref(db, `rooms/${state.roomCode}/roleFlags/nezumiRevealed`);
+  onValue(rf, snap => {
+    state.roleFlags.nezumiRevealed = !!snap.val();
+    if (!helpBackdrop.classList.contains('hidden')) renderHelpList();
+  });
+}
+function subscribeHands(){
+  const handsRef = ref(db, `rooms/${state.roomCode}/hands`);
+  onValue(handsRef, snap => {
+    state.hands = snap.val() || {};
+    state.handsLoaded = true;
+    renderHands();
+    updateCheeseUI();
+    requestNeboPeekSync();
+
+    // 投票結果後に手札が届いた場合も、表にしておく
+    if (state.voteResult?.id){
+      revealAllIdentityCards();
+      setVoteCounts(state.voteResult.counts || {});
+    }
+  });
+}
+function subscribeDice(){
+  const diceRef = ref(db, `rooms/${state.roomCode}/dice`);
+  onValue(diceRef, snap => {
+    state.prevDice = state.dice || {};
+    state.dice = snap.val() || {};
+    state.diceLoaded = true;
+
+    for (const pid of Object.keys(state.dice)){
+      syncDieDom(pid);
+    }
+    syncDieDom(state.userId);
+
+    requestNeboPeekSync();
+    scheduleRecalcSameDiceCup3();
+    updateCheeseFollowerPop();
+  });
+}
+function subscribeCups(){
+  const cupsRef = ref(db, `rooms/${state.roomCode}/cups`);
+  onValue(cupsRef, snap => {
+    const next = snap.val() || {};
+    const prev = state.cups || {};
+    state.prevCups = prev;
+    state.cups = next;
+
+    for (const pid of Object.keys(next)){
+      const cupEl = getCupElFor(pid);
+      if (!cupEl) continue;
+
+      if (applyMyPeekOverrideToEl(pid, cupEl)) continue;
+
+      if (state.forceCup3Active && state.forcedCup3Pids.has(pid)){
+        continue;
+      }
+
+      if (pid === state.userId){
+        if (cupEl.classList.contains('is-animating')) continue;
+        const merged = { ...next[pid], lifted: state.cupState.lifted };
+        applyCupStateToEl(cupEl, merged);
+        continue;
+      }
+
+      const prevNoLift = prev[pid] ? { ...prev[pid], lifted:false } : prev[pid];
+      const nextNoLift = next[pid] ? { ...next[pid], lifted:false } : next[pid];
+      animateCupToState(cupEl, pid, prevNoLift, nextNoLift);
+    }
+
+    requestNeboPeekSync();
+
+    if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+  });
+}
+
+function subscribeMyNeboPeek(){
+  const r = neboPeekRefFor(state.userId);
+  onValue(r, snap => {
+    state.myNeboPeek = snap.val() || null;
+    updateNeboPop();
+
+    if (state.myNeboPeek?.targetPid){
+      refreshCupVisualForPid(state.myNeboPeek.targetPid);
+    }
+  });
+}
+
+/* ===== 描画 ===== */
+function renderMyHand(){
+  myHandEl.innerHTML = '';
+  const myId = state.userId;
+  const handData = state.hands[myId];
+
+  if (!handData || !Array.isArray(handData.cards) || !handData.cards.length) return;
+
+  const c = handData.cards[0];
+
+  const row = document.createElement('div');
+  row.className = 'my-hand-row';
+
+  const card = document.createElement('div');
+  card.className = 'my-card';
+  if (c && c.img) card.style.backgroundImage = `url('${c.img}')`;
+
+  const die = createDieEl(28);
+  die.dataset.pid = myId;
+  const d = state.dice?.[myId] || { value: 1 };
+  applyDieStateToEl(die, d);
+
+  const wrap = document.createElement('div');
+  wrap.className = 'die-cup-wrap';
+
+  const cup = document.createElement('img');
+  cup.className = 'cup-img';
+  cup.dataset.pid = myId;
+  cup.src = 'cup.png';
+  cup.alt = 'cup';
+
+  applyCupStateToEl(cup, state.cups?.[myId]);
+  attachCupAnimation(cup, die);
+
+  wrap.appendChild(die);
+  wrap.appendChild(cup);
+
+  row.appendChild(card);
+  row.appendChild(wrap);
+  myHandEl.appendChild(row);
+
+  applyCheeseFollowRevealForViewer();
+
+  // 投票結果後なら表に
+  if (state.voteResult?.id){
+    revealAllIdentityCards();
+  }
+}
+function renderHands(){
+  renderMyHand();
+  if (latestPlayers.length) renderPlayerCircle(latestPlayers);
+  applyCheeseFollowRevealForViewer();
+
+  if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+}
+
+/* URLからroom */
+const urlParams = new URLSearchParams(window.location.search);
+const roomFromUrl = urlParams.get('room');
+if(roomFromUrl) inputCode.value = roomFromUrl;
+
+btnJoin.addEventListener('click', async () => {
+  unlockCheeseAudio();
+
+  state.userName = inputName.value || '名無し';
+  state.roomCode = inputCode.value.trim() || generateRoomCode();
+
+  state.listenStartAt = Date.now();
+
+  await set(ref(db, `rooms/${state.roomCode}/users/${state.userId}`), {
+    name: state.userName,
+    joinedAt: Date.now()
+  });
+
+  const roomRef = ref(db, `rooms/${state.roomCode}`);
+  const roomSnap = await get(roomRef);
+  const roomData = roomSnap.val();
+
+  if(!roomData || !roomData.hostId){
+    await update(roomRef, { hostId: state.userId });
+    state.isHost = true;
+  } else {
+    state.isHost = (roomData.hostId === state.userId);
+  }
+
+  updateHostUI();
+
+  mainEl.classList.remove('prejoin');
+  mainEl.classList.add('joined');
+
+  joinBox.classList.add('hidden');
+  lobby.classList.remove('hidden');
+  lobby.classList.add('entered');
+
+  await restoreSeatFromDB();
+
+  subscribeRoom();
+  subscribeHostState();
+  subscribePlayers();
+  subscribeHands();
+  subscribeRoleFlags();
+  subscribeDice();
+  subscribeCups();
+
+  subscribeMyNeboPeek();
+
+  subscribeBlackoutDone();
+  subscribeBlackout();
+  subscribeFirstCupDone();
+
+  subscribeStartReset();
+  subscribeCheeseGone();
+  subscribeCheeseFollow();
+
+  subscribeDiscussionTimer();
+
+  /* ✅投票購読 */
+  subscribeTimeUp();
+  subscribeVotes();
+  subscribeVoteResult();
+
+  await ensureCupForPlayer(state.userId);
+  await ensureDieForPlayer(state.userId);
+
+  syncSeatUI();
+
+  window.addEventListener('resize', () => {
+    if (shouldShowCheeseLineForMe()) drawCheeseLine();
+  });
+
+  updateCheeseUI();
+  updateCheeseFollowerPop();
+  applyCheeseFollowRevealForViewer();
+  requestNeboPeekSync();
+
+  if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+
+  updateTalkTimerUI();
+});
+
+copyLinkBtn.addEventListener('click', async () => {
+  const url = `${location.origin}${location.pathname}?room=${state.roomCode}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    copyLinkBtn.classList.add('copied');
+    copyLinkBtn.textContent = 'COPIED';
+    inputCode.value = state.roomCode;
+    setTimeout(()=>{
+      copyLinkBtn.classList.remove('copied');
+      copyLinkBtn.textContent='リンクコピー';
+    },1500);
+  } catch {
+    prompt('コピーできません。手動でコピーしてください', url);
+  }
+});
+
+async function syncSeatUI(){
+  if (!state.roomCode) return;
+
+  const maxPlayers = state.room.maxPlayers || null;
+
+  if (!state.isHost && !maxPlayers){
+    seatPop.classList.add('hidden');
+    return;
+  }
+  if (state.seatedTable !== null){
+    seatPop.classList.add('hidden');
+    return;
+  }
+  await renderSeatTabs();
+  seatPop.classList.remove('hidden');
+}
+
+async function renderSeatTabs(){
+  if (!state.roomCode) return;
+  if (isRenderingSeatTabs) return;
+  isRenderingSeatTabs = true;
+
+  try {
+    seatTabs.innerHTML = '';
+
+    const roomRef = ref(db, `rooms/${state.roomCode}`);
+    const roomSnap = await get(roomRef);
+    const roomData = roomSnap.val() || {};
+    const maxPlayers = roomData.maxPlayers || null;
+
+    if(state.isHost && !maxPlayers){
+      seatLabel.textContent = '人数を選択';
+      for(let i=2; i<=8; i++){
+        const tab = document.createElement('div');
+        tab.className = 'tab';
+        tab.textContent = i;
+
+        tab.onclick = async () => {
+          await update(roomRef, { maxPlayers: i });
+          const tRef = ref(db, `rooms/${state.roomCode}/tables/1`);
+          await set(tRef, { playerId: state.userId, playerName: state.userName });
+
+          await ensureDieForPlayer(state.userId);
+          await ensureCupForPlayer(state.userId);
+
+          state.seatedTable = 1;
+          seatPop.classList.add('hidden');
+          requestNeboPeekSync();
+        };
+        seatTabs.appendChild(tab);
+      }
+      return;
+    }
+
+    seatLabel.textContent = '席を選択';
+
+    const effectiveMax = maxPlayers || 8;
+    const tablesSnap = await get(ref(db, `rooms/${state.roomCode}/tables`));
+    const tables = tablesSnap.val() || {};
+
+    for(let i=1; i<=effectiveMax; i++){
+      const tab = document.createElement('div');
+      tab.className = 'tab';
+      tab.textContent = i;
+
+      const t = tables[i];
+      if(t && t.playerId) tab.classList.add('disabled');
+
+      tab.onclick = async () => {
+        if(tab.classList.contains('disabled')) return;
+        const tRef = ref(db, `rooms/${state.roomCode}/tables/${i}`);
+        await set(tRef, { playerId: state.userId, playerName: state.userName });
+
+        await ensureDieForPlayer(state.userId);
+        await ensureCupForPlayer(state.userId);
+
+        state.seatedTable = i;
+        seatPop.classList.add('hidden');
+        requestNeboPeekSync();
+      };
+      seatTabs.appendChild(tab);
+    }
+  } finally {
+    isRenderingSeatTabs = false;
+  }
+}
+
+btnSeatCancel.onclick = () => {
+  seatPop.classList.add('hidden');
+  state.seatedTable = null;
+};
+
+function subscribePlayers(){
+  const tablesRef = ref(db, `rooms/${state.roomCode}/tables`);
+  onValue(tablesRef, async snap => {
+    const data = snap.val() || {};
+    const players = Object.entries(data)
+      .map(([seatIndex, t]) => (t && t.playerId ? {
+        id: t.playerId,
+        name: t.playerName || '名無し',
+        seatIndex: Number(seatIndex)
+      } : null))
+      .filter(Boolean)
+      .sort((a,b) => a.seatIndex - b.seatIndex);
+
+    latestPlayers = players;
+    state.playersLoaded = true;
+
+    const mySeat = players.find(p => p.id === state.userId);
+    if (mySeat && state.seatedTable === null) {
+      state.seatedTable = mySeat.seatIndex;
+      seatPop.classList.add('hidden');
+    }
+
+    const meStillSeated = players.some(p => p.id === state.userId);
+    if (!meStillSeated && state.seatedTable !== null) {
+      state.seatedTable = null;
+    }
+
+    await syncSeatUI();
+    renderPlayerCircle(players);
+
+    maybeFireBlackoutAsHost().catch(()=>{});
+    requestNeboPeekSync();
+
+    updateCheeseFollowerPop();
+
+    if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+
+    updateTalkTimerUI();
+  });
+}
+
+function renderPlayerCircle(players){
+  playerCircle.innerHTML = '';
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.id = 'cheeseLineSvg';
+  svg.setAttribute('viewBox','0 0 260 260');
+  svg.setAttribute('preserveAspectRatio','none');
+  playerCircle.appendChild(svg);
+
+  const cheeseBtn = document.createElement('button');
+  cheeseBtn.id = 'cheeseBtn';
+  cheeseBtn.type = 'button';
+  cheeseBtn.setAttribute('aria-label','cheese');
+  cheeseBtn.textContent = '🧀';
+  cheeseBtn.onclick = async (e) => {
+    e.stopPropagation();
+    if (!canClickCheeseNow()) return;
+    await fireCheeseGone();
+  };
+  playerCircle.appendChild(cheeseBtn);
+
+  if (!players.length){
+    updateCheeseUI();
+    return;
+  }
+
+  const n = players.length;
+  const radius = 45;
+  const step = (2 * Math.PI) / n;
+  const anchorAngle = Math.PI / 2;
+  const meIndex = players.findIndex(p => p.id === state.userId);
+
+  players.forEach((p, idx) => {
+    const k = (meIndex === -1) ? idx : (idx - meIndex + n) % n;
+    const angle = anchorAngle + step * k;
+
+    const x = 50 + radius * Math.cos(angle);
+    const y = 50 + radius * Math.sin(angle);
+
+    const tag = document.createElement('div');
+    tag.className = 'player-tag' + (p.id === state.userId ? ' me' : '');
+    tag.textContent = p.name;
+    tag.style.left = `${x}%`;
+    tag.style.top = `${y}%`;
+    tag.dataset.pid = p.id;
+
+    tag.onclick = () => {
+      if (p.id === state.userId) return;
+
+      // ✅投票（TIME UP後〜結果前）
+      if (state.timeUp?.id && !state.voteResult?.id){
+        setMyVote(p.id).catch(()=>{});
+        return;
+      }
+
+      if (canSelectCheeseFollowerOn(p.id)){
+        selectCheeseFollower(p.id).catch(()=>{});
+        return;
+      }
+
+      if (canUseNeboPeekOn(p.id)){
+        useNeboPeek(p.id).catch(()=>{});
+        return;
+      }
+
+      if (!state.roomCode) return;
+      if (state.seatedTable !== null) return;
+
+      pendingSeatIndexToSteal = p.seatIndex;
+      pendingSeatPlayerIdToSteal = p.id;
+      kickMessage.textContent = `「${p.name}」を追い出して、この席に着席しますか？`;
+      kickDialog.classList.remove('hidden');
+    };
+
+    if (p.id !== state.userId && state.gameStarted){
+      const miniArea = document.createElement('div');
+      miniArea.className = 'mini-area';
+
+      const miniHand = document.createElement('div');
+      miniHand.className = 'mini-hand';
+      const card = document.createElement('div');
+      card.className = 'mini-card';
+      miniHand.appendChild(card);
+      miniArea.appendChild(miniHand);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'die-cup-wrap';
+
+      const die = createDieEl(22);
+      die.dataset.pid = p.id;
+      const d = state.dice?.[p.id] || { value: 1 };
+      applyDieStateToEl(die, d);
+
+      const scaleWrap = document.createElement('div');
+      scaleWrap.className = 'cup-scale';
+      scaleWrap.dataset.pid = p.id;
+
+      const cup = document.createElement('img');
+      cup.className = 'cup-img';
+      cup.dataset.pid = p.id;
+      cup.src = 'cup.png';
+      cup.alt = 'cup';
+
+      const cs = state.cups?.[p.id];
+      applyCupStateToEl(cup, cs);
+      syncCupZForMini(p.id, cup);
+
+      if (state.forceCup3Active && state.forcedCup3Pids.has(p.id)){
+        forceCupElToCup3Visual(p.id);
+      }
+
+      applyMyPeekOverrideToEl(p.id, cup);
+
+      miniArea.style.pointerEvents = 'auto';
+      scaleWrap.style.pointerEvents = 'auto';
+      cup.style.pointerEvents = 'auto';
+      cup.style.cursor = 'pointer';
+      cup.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (canUseNeboPeekOn(p.id)){
+          useNeboPeek(p.id).catch(()=>{});
+        }
+      });
+
+      scaleWrap.appendChild(cup);
+      wrap.appendChild(die);
+      wrap.appendChild(scaleWrap);
+
+      miniArea.appendChild(wrap);
+      tag.appendChild(miniArea);
+    }
+
+    playerCircle.appendChild(tag);
+  });
+
+  requestAnimationFrame(() => {
+    updateCheeseUI();
+    requestNeboPeekSync();
+    updateCheeseFollowerPop();
+    applyCheeseFollowRevealForViewer();
+
+    // 投票UI反映
+    updateVotePop();
+    applyVotedBlackRule();
+    if (!state.voteResult?.id){
+      setMyVoteMark(state.votes?.[state.userId]?.targetPid || null);
+    } else {
+      setVoteCounts(state.voteResult.counts || {});
+      revealAllIdentityCards();
+    }
+
+    if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+
+    updateTalkTimerUI();
+  });
+}
+
+kickDialog.addEventListener('click', (e) => {
+  if (e.target === kickDialog) {
+    kickDialog.classList.add('hidden');
+    pendingSeatIndexToSteal = null;
+    pendingSeatPlayerIdToSteal = null;
+  }
+});
+btnKickNo.addEventListener('click', (e) => {
+  e.stopPropagation();
+  kickDialog.classList.add('hidden');
+  pendingSeatIndexToSteal = null;
+  pendingSeatPlayerIdToSteal = null;
+});
+btnKickYes.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  if (pendingSeatIndexToSteal == null || !state.roomCode) {
+    kickDialog.classList.add('hidden');
+    return;
+  }
+
+  const seatIndex = pendingSeatIndexToSteal;
+  const roomRef = ref(db, `rooms/${state.roomCode}`);
+  const roomSnap = await get(roomRef);
+  const roomData = roomSnap.val() || {};
+
+  const tRef = ref(db, `rooms/${state.roomCode}/tables/${seatIndex}`);
+  await set(tRef, { playerId: state.userId, playerName: state.userName || '名無し' });
+
+  if (pendingSeatPlayerIdToSteal){
+    await transferPlayerState(pendingSeatPlayerIdToSteal, state.userId);
+  } else {
+    await ensureDieForPlayer(state.userId);
+    await ensureCupForPlayer(state.userId);
+  }
+
+  if (roomData.hostId && pendingSeatPlayerIdToSteal && roomData.hostId === pendingSeatPlayerIdToSteal) {
+    await update(roomRef, { hostId: state.userId });
+  }
+
+  state.seatedTable = seatIndex;
+
+  kickDialog.classList.add('hidden');
+  pendingSeatIndexToSteal = null;
+  pendingSeatPlayerIdToSteal = null;
+
+  seatPop.classList.add('hidden');
+
+  requestNeboPeekSync();
+  updateCheeseFollowerPop();
+  applyCheeseFollowRevealForViewer();
+
+  if (state.myNeboPeek?.targetPid) refreshCupVisualForPid(state.myNeboPeek.targetPid);
+});
+
+/* =========================
+   スタート時：正体カード1枚だけ配る
+   ========================= */
+async function dealIdentityCards(){
+  if (!state.roomCode) return;
+
+  const tablesSnap = await get(ref(db, `rooms/${state.roomCode}/tables`));
+  const tables = tablesSnap.val() || {};
+
+  const players = Object.values(tables)
+    .filter(t => t && t.playerId)
+    .map(t => t.playerId);
+
+  if (!players.length) return;
+
+  const shuffled = shuffle(players);
+
+  const dorobooId = shuffled[0];
+  const canNezumi = !!state.roleFlags.nezumiRevealed && shuffled.length >= 2;
+  const nezumiId = canNezumi ? shuffled[1] : null;
+
+  const hands = {};
+
+  for (const pid of players){
+    let roleKey = 'nebosuke';
+    if (pid === dorobooId) roleKey = 'doroboo';
+    else if (nezumiId && pid === nezumiId) roleKey = 'nezumi';
+
+    hands[pid] = {
+      cards: [{ key: roleKey, img: ROLE_IMG[roleKey] }]
+    };
+  }
+
+  await set(ref(db, `rooms/${state.roomCode}/hands`), hands);
+}
+
+/* 設定ポップ開閉 */
+hostSettingsBtn.addEventListener('click', () => {
+  if (!state.isHost) return;
+  startPop.classList.toggle('hidden');
+});
+btnStartPopClose.addEventListener('click', () => {
+  startPop.classList.add('hidden');
+});
+
+/* =========================
+   スタート時に「全員強制リセット」→ DB初期化
+   ========================= */
+async function hardResetOnStartAsHost(){
+  if (!state.isHost || !state.roomCode) return;
+
+  const tablesSnap = await get(ref(db, `rooms/${state.roomCode}/tables`));
+  const tables = tablesSnap.val() || {};
+  const pids = Object.values(tables).filter(t=>t?.playerId).map(t=>t.playerId);
+
+  await set(ref(db, `rooms/${state.roomCode}/events/startReset`), {
+    id: crypto.randomUUID(),
+    at: Date.now()
+  });
+
+  await Promise.all([
+    remove(ref(db, `rooms/${state.roomCode}/events/firstCupDone`)),
+    remove(ref(db, `rooms/${state.roomCode}/events/blackout`)),
+    remove(ref(db, `rooms/${state.roomCode}/events/cheeseGone`)),
+    remove(ref(db, `rooms/${state.roomCode}/events/blackoutDone`)),
+    remove(ref(db, `rooms/${state.roomCode}/events/cheeseFollow`)),
+    remove(ref(db, `rooms/${state.roomCode}/events/discussionTimer`)),
+    remove(ref(db, `rooms/${state.roomCode}/neboPeek`)),
+
+    /* ✅投票も初期化 */
+    remove(ref(db, `rooms/${state.roomCode}/events/timeUp`)),
+    remove(ref(db, `rooms/${state.roomCode}/votes`)),
+    remove(ref(db, `rooms/${state.roomCode}/events/voteResult`)),
+  ]);
+
+  const updates = {};
+  for (const pid of pids){
+    updates[`cups/${pid}`] = defaultCupState();
+    const existing = state.dice?.[pid]?.value;
+    updates[`dice/${pid}`] = { value: clampDieValue(existing ?? randomDieValue()) };
+  }
+  await update(ref(db, `rooms/${state.roomCode}`), updates);
+
+  clearCheeseLine();
+  updateCheeseUI();
+
+  state.firstCupDone = false;
+  state.lastBlackoutId = null;
+  state.currentBlackoutId = null;
+
+  hardResetAllCupAndDiceDom();
+}
+
+/* スタート */
+btnGameStart.addEventListener('click', async () => {
+  if (!state.isHost) return;
+
+  await hardResetOnStartAsHost();
+
+  await update(ref(db, `rooms/${state.roomCode}`), { startedAt: Date.now() });
+
+  await dealIdentityCards();
+  startPop.classList.add('hidden');
+
+  requestNeboPeekSync();
+  updateCheeseFollowerPop();
+  applyCheeseFollowRevealForViewer();
+});
+
+/* リセット */
+btnResetRoom.addEventListener('click', async () => {
+  if (!state.isHost || !state.roomCode) return;
+
+  const base = `rooms/${state.roomCode}`;
+  await Promise.all([
+    remove(ref(db, `${base}/maxPlayers`)),
+    remove(ref(db, `${base}/tables`)),
+    remove(ref(db, `${base}/hands`)),
+    remove(ref(db, `${base}/roleFlags`)),
+    remove(ref(db, `${base}/dice`)),
+    remove(ref(db, `${base}/cups`)),
+    remove(ref(db, `${base}/events`)),
+    remove(ref(db, `${base}/startedAt`)),
+    remove(ref(db, `${base}/logs`)),
+    remove(ref(db, `${base}/neboPeek`)),
+    remove(ref(db, `${base}/votes`)), // ✅投票も
+  ]);
+
+  state.seatedTable = null;
+
+  state.cupState.covered = false;
+  state.cupState.lifted = false;
+  state.cupState.transform = 'translate(0px, 0px) rotate(0deg)';
+
+  clearSameDiceCup3Local();
+
+  state.afterBright = false;
+
+  clearCheeseLine();
+
+  resetMyCupDomOnly();
+  await ensureCupForPlayer(state.userId);
+  await ensureDieForPlayer(state.userId);
+
+  state.firstCupDone = false;
+  state.lastBlackoutId = null;
+  state.currentBlackoutId = null;
+  document.getElementById('blackout')?.classList.remove('on');
+
+  state.gameStarted = false;
+
+  state.blackoutDoneMap = {};
+  state.blackoutDoneLoaded = false;
+  state.pendingBlackoutEv = null;
+
+  state.roomLoaded = false;
+  state.playersLoaded = false;
+  state.handsLoaded = false;
+  state.diceLoaded = false;
+
+  state.cheeseFollow = null;
+
+  /* ✅タイマー購読状態も初期化 */
+  state.discussionTimer = null;
+  state.lastDiscussionTimerId = null;
+  state.discussionTimerLoaded = false;
+
+  /* ✅投票状態初期化 */
+  state.timeUp = null;
+  state.lastTimeUpId = null;
+  state.votes = {};
+  state.myVoteTarget = null;
+  state.voteResult = null;
+  state.lastVoteResultId = null;
+  clearVoteMarks();
+  if (winnerBackdropEl) winnerBackdropEl.classList.add('hidden');
+
+  startPop.classList.add('hidden');
+  await syncSeatUI();
+  if (latestPlayers.length) renderPlayerCircle(latestPlayers);
+
+  updateCheeseUI();
+  updateCheeseFollowerPop();
+  applyCheeseFollowRevealForViewer();
+
+  updateTalkTimerUI();
+});
+
+/* =========================
+   进入时补齐：DB缺失时创建（あなたの元コードの続きがあるならここに置く）
+   ========================= */
+</script>
+
+</body>
+</html>
