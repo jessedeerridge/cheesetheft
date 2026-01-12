@@ -585,7 +585,7 @@
   <h1>テンプレ</h1>
   <div style="display:flex;align-items:center;gap:6px;">
     <div class="small" id="roomInfo"></div>
-    <button class="btn ghost" id="copyLinkBtn">リンクコピー</button>
+    <button class="btn ghost" id="copyLinkBtn">COPY</button>
   </div>
 </header>
 
@@ -708,13 +708,14 @@ import {
    ========================= */
 
 const firebaseConfig = {
-  apiKey: "AIzaSyALgmax4WiOkFrdxaNC1Bfp6MdsEFoIfUU",
-  authDomain: "studio-m7owg.firebaseapp.com",
-  databaseURL: "https://studio-m7owg-default-rtdb.firebaseio.com",
-  projectId: "studio-m7owg",
-  storageBucket: "studio-m7owg.firebasestorage.app",
-  messagingSenderId: "263329516095",
-  appId: "1:263329516095:web:3d90a3993135dce1d8068a"
+  apiKey: "AIzaSyAMeKfMoHt9qOQ2VuUBpkrKuei7yGBbEi8",
+  authDomain: "cheesetheft-fd52f.firebaseapp.com",
+  databaseURL: "https://cheesetheft-fd52f-default-rtdb.firebaseio.com",
+  projectId: "cheesetheft-fd52f",
+  storageBucket: "cheesetheft-fd52f.firebasestorage.app",
+  messagingSenderId: "298688959395",
+  appId: "1:298688959395:web:6ac2c3eb214201f2020016",
+  measurementId: "G-HPDFTCLR8H"
 };
 
 
@@ -3268,7 +3269,7 @@ copyLinkBtn.addEventListener('click', async () => {
     inputCode.value = state.roomCode;
     setTimeout(()=>{
       copyLinkBtn.classList.remove('copied');
-      copyLinkBtn.textContent='リンクコピー';
+      copyLinkBtn.textContent='COPY';
     },1500);
   } catch {
     prompt('コピーできません。手動でコピーしてください', url);
@@ -3814,4 +3815,5 @@ btnResetRoom.addEventListener('click', async () => {
 
 </body>
 </html>
+
 
